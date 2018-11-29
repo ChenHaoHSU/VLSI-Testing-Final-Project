@@ -1,46 +1,32 @@
 #!/bin/bash
-EXE=./atpg
-GOLDEN_EXE=../bin/golden_tdfsim
-GOLDEN_EXE2=../bin/golden_tdfsim_faults
-CIRPATH=../sample_circuits/
-PATPATH=../tdf_patterns/
-RPTPATH=../reports/
+EXE=./bin/atpg
+CIR_PATH=./sample_circuits/
+PAT_PATH=./tdf_patterns/
 
-# # Single case (g, 'gf')
-# CKT_FILE=c$1.ckt
-# PAT_FILE=c$1.pat
-# if [ $2 = 'g' ]
-# then
-#     $GOLDEN_EXE -ndet 1 -tdfsim $PATPATH$PAT_FILE $CIRPATH$CKT_FILE
-# elif [ $2 = 'gf' ]
-# then
-#     $GOLDEN_EXE2 -ndet 1 -tdfsim $PATPATH$PAT_FILE $CIRPATH$CKT_FILE
-# else
-#     $EXE -tdfsim $PATPATH$PAT_FILE $CIRPATH$CKT_FILE
-# fi
+mkdir -p $PAT_PATH
 
-# Command-line
-ALLCASES="17 432 499 880 1355 2670 3540 6288 7552"
-if [ $# -eq 0 ]
+# Run
+CKT_FILE=c$1.ckt
+PAT_FILE=c$1.pat
+if [ $# -eq 1 ]
 then
-    CASES=$ALLCASES
-else
-    CASES=$1
+    $EXE -tdfatpg $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
+elif [ $# -eq 2 ] # only compression
+then
+    $EXE -tdfatpg -compression $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
+elif [ $# -eq 3 ] # only ndet
+then
+    $EXE -tdfatpg -ndet $3 $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
+elif [ $# -eq 4 ] # compression and ndet
+then
+    $EXE -tdfatpg -compression -ndet $4 $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
+else # help
+    echo "[Help]"
+    echo "========================================================"
+    echo "Usage: ./run.sh ckt# [c] [<n> <#det>]                   "
+    echo "========================================================"
+    echo "Example: ./run.sh 17        (c17)                       "
+    echo "         ./run.sh 17 c      (c17 + compression)         "
+    echo "         ./run.sh 17 n 8    (c17 + ndet 8)              "
+    echo "         ./run.sh 17 c n 8  (c17 + compression + ndet 8)"
 fi
-
-# Run cases
-for case in $CASES
-do
-  CKT_FILE=c$case.ckt
-  PAT_FILE=c$case.pat
-  RPT=c$case.report
-  GOLDEN_RPT=golden_c$case.report
-  echo "##### $CKT_FILE BEGIN #####"
-  $EXE -tdfsim $PATPATH$PAT_FILE $CIRPATH$CKT_FILE > $RPTPATH$RPT
-  $GOLDEN_EXE -ndet 1 -tdfsim $PATPATH$PAT_FILE $CIRPATH$CKT_FILE > $RPTPATH$GOLDEN_RPT
-  diff $RPTPATH$RPT $RPTPATH$GOLDEN_RPT
-  echo "##### $CKT_FILE END #######"
-  echo ""
-  echo "---------------------------------------------------------"
-  echo ""
-done
