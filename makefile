@@ -13,7 +13,7 @@ CFLAGS    = -std=c++11 -g -Wall -static
 CFLAGS    = -std=c++11 -O3 -static
 
 ECHO      = echo
-RM        = rm -rf
+RM        = rm
 MKDIR     = mkdir
 
 $(EXE): $(COBJS)
@@ -26,4 +26,4 @@ $(SRCPATH)%.o: $(SRCPATH)%.cpp $(CHDRS)
 	@$(CXX) $(CFLAGS) -c $< -o $@
 
 clean:
-	@$(RM) $(EXE) $(COBJS)
+	@$(RM) -rf $(EXE) $(COBJS)
