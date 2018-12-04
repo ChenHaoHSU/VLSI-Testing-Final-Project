@@ -8,6 +8,7 @@ mkdir -p $PAT_PATH
 # Run
 CKT_FILE=c$1.ckt
 PAT_FILE=c$1.pat
+
 if [ $# -eq 1 ]
 then
     $EXE -tdfatpg $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
