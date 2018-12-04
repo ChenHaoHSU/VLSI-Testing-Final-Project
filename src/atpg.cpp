@@ -13,7 +13,9 @@ ATPG::ATPG() {
   this->backtrack_limit = 50;     /* default value */
   this->total_attempt_num = 1;    /* default value */
   this->fsim_only = false;        /* flag to indicate fault simulation only */
-  this->tdfsim_only = false;        /* flag to indicate tdfault simulation only */
+  this->tdfsim_only = false;      /* flag to indicate tdfault simulation only */
+  this->compression = false;      /* flag to indicate test compression on */
+  this->detection_num = 1;        /* number of detection */
 
   /* orginally assigned in input.c */
   this->debug = 0;                /* != 0 if debugging;  this is a switch of debug mode */

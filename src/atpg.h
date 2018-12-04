@@ -78,6 +78,9 @@ public:
   /* defined in tpgmain.cpp */
   void set_fsim_only(const bool&);
   void set_tdfsim_only(const bool&);
+  void set_tdfatpg_only(const bool&);
+  void set_compression(const bool&);
+  void set_detection_num(const int&);
   void read_vectors(const string&);
   void set_total_attempt_num(const int&);
   void set_backtrack_limit(const int&);
@@ -133,8 +136,11 @@ private:
   int backtrack_limit;
   int total_attempt_num;
   bool fsim_only;                      /* flag to indicate fault simulation only */
-  bool tdfsim_only;                      /* flag to indicate tdfault simulation only */
-  
+  bool tdfsim_only;                    /* flag to indicate tdfault simulation only */
+  bool tdfatpg_only;                   /* flag to indicate tdfault atpg only */
+  bool compression;                    /* flag to indicate test compression mode on */
+  int detection_num;                   /* number of detection */
+
   /* orginally declared input.c */
   int debug;                           /* != 0 if debugging;  this is a switch of debug mode */
   string filename;                     /* current input file */
@@ -266,8 +272,8 @@ private:
 			                            associated gate input index number for this GI fault */   
     short fault_type;          /* s-a-1 or s-a-0 or slow-to-rise or slow-to-fall fault */
     short detect;              /* detection flag */
-    short activate;              /* activation flag */
-    bool test_tried;          /* flag to indicate test is being tried */
+    short activate;            /* activation flag */
+    bool test_tried;           /* flag to indicate test is being tried */
     int eqv_fault_num;         /* number of equivalent faults */
     int to_swlist;             /* index to the sort_wlist[] */ 
     int fault_no;              /* fault index */

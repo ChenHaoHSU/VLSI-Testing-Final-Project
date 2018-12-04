@@ -19,7 +19,7 @@ main(int argc, char *argv[]) {
   i = 1;
   
 /* parse the input switches & arguments */
-  while(i< argc) {
+  while(i < argc) {
     if (strcmp(argv[i],"-anum") == 0) {
       atpg.set_total_attempt_num(atoi(argv[i+1]));
       i+=2;
@@ -36,6 +36,18 @@ main(int argc, char *argv[]) {
     else if (strcmp(argv[i],"-tdfsim") == 0) {
       vetFile = string(argv[i+1]);
       atpg.set_tdfsim_only(true);
+      i+=2;
+    }
+    else if (strcmp(argv[i],"-tdfatpg") == 0) {
+      atpg.set_tdfatpg_only(true);
+      i+=1;
+    }
+    else if (strcmp(argv[i],"-compression") == 0) {
+      atpg.set_compression(true);
+      i+=1;
+    }
+    else if (strcmp(argv[i],"-ndet") == 0) {
+      atpg.set_detection_num(atoi(argv[i+1]));
       i+=2;
     }
     else if (argv[i][0] == '-') {
@@ -132,6 +144,18 @@ void ATPG::set_fsim_only(const bool& b) {
 
 void ATPG::set_tdfsim_only(const bool& b) {
   this->tdfsim_only = b;
+}
+
+void ATPG::set_tdfatpg_only(const bool& b) {
+  this->tdfatpg_only = b;
+}
+
+void ATPG::set_compression(const bool& b) {
+  this->compression = b;
+}
+
+void ATPG::set_detection_num(const int& n) {
+  this->detection_num = n;
 }
 
 void ATPG::set_total_attempt_num(const int& i) {
