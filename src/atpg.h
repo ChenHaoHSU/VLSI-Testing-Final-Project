@@ -226,7 +226,10 @@ private:
   void tdfsim_a_vector(const string&, int&);
   void tdf_inject_fault_value(const wptr, const int&, const int&);
   wptr tdf_get_faulty_wire(const fptr, int&);
-    
+  
+  /*defined in tdfatpg.cpp*/
+  void transition_delay_fault_atpg(void);
+
   /* detail declaration of WIRE, NODE, and FAULT classes */
   class WIRE {
   public:

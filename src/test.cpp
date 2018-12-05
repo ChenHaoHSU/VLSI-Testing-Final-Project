@@ -25,9 +25,14 @@ void ATPG::test(void) {
   if(tdfsim_only)
   {
     transition_delay_fault_simulation();
-    
     return;
   }// if tdfsim only
+
+  if(tdfatpg_only)
+  {
+    transition_delay_fault_atpg();
+    return;
+  }// if tdfatpg only
 
 
   /* ATPG mode */
