@@ -1,27 +1,17 @@
 #!/bin/bash
-EXE=./bin/atpg
-CIR_PATH=./sample_circuits/
-PAT_PATH=./tdf_patterns/
+printOnScreen=false
+printOnScreen=true
 
-mkdir -p $PAT_PATH
+EXE=./bin/atpg
+CIR_PATH=./sample_circuits
+PAT_PATH=./tdf_patterns
 
 # Run
-CKT_FILE=c$1.ckt
-PAT_FILE=c$1.pat
+mkdir -p $PAT_PATH
+CKT_FILE=$CIR_PATH/c$1.ckt
+PAT_FILE=$PAT_PATH/c$1.pat
 
-if [ $# -eq 1 ]
-then
-    $EXE -tdfatpg $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
-elif [ $# -eq 2 ] # only compression
-then
-    $EXE -tdfatpg -compression $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
-elif [ $# -eq 3 ] # only ndet
-then
-    $EXE -tdfatpg -ndet $3 $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
-elif [ $# -eq 4 ] # compression and ndet
-then
-    $EXE -tdfatpg -compression -ndet $4 $CIR_PATH$CKT_FILE > $PAT_PATH$PAT_FILE
-else # help
+print_help () {
     echo "[Help]"
     echo "========================================================"
     echo "Usage: ./run.sh ckt# [c] [<n> <#det>]                   "
@@ -30,4 +20,31 @@ else # help
     echo "         ./run.sh 17 c      (c17 + compression)         "
     echo "         ./run.sh 17 n 8    (c17 + ndet 8)              "
     echo "         ./run.sh 17 c n 8  (c17 + compression + ndet 8)"
+}
+
+if [ "$printOnScreen" = true ] # Print stdout to the screen
+then
+    if [ $# -eq 1 ]; then
+        $EXE -tdfatpg $CKT_FILE
+    elif [ $# -eq 2 ]; then # only compression
+        $EXE -tdfatpg -compression $CKT_FILE
+    elif [ $# -eq 3 ]; then # only ndet
+        $EXE -tdfatpg -ndet $3 $CKT_FILE
+    elif [ $# -eq 4 ]; then # compression and ndet
+        $EXE -tdfatpg -compression -ndet $4 $CKT_FILE
+    else # help
+        print_help
+    fi
+else # Redirect stdout to the file
+    if [ $# -eq 1 ]; then
+        $EXE -tdfatpg $CKT_FILE > $PAT_FILE
+    elif [ $# -eq 2 ]; then # only compression
+        $EXE -tdfatpg -compression $CKT_FILE > $PAT_FILE
+    elif [ $# -eq 3 ]; then # only ndet
+        $EXE -tdfatpg -ndet $3 $CKT_FILE > $PAT_FILE
+    elif [ $# -eq 4 ]; then # compression and ndet
+        $EXE -tdfatpg -compression -ndet $4 $CKT_FILE > $PAT_FILE
+    else # help
+        print_help
+    fi
 fi
