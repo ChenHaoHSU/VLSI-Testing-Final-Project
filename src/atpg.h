@@ -231,9 +231,9 @@ private:
   void transition_delay_fault_atpg(void);
   fptr select_primary_fault(void);      /* select a primary fault for podem */
   fptr select_secondary_fault(void);    /* select a secondary fault for podem_x */
-  void tdf_podem_v1(const fptr);        /* generate test vector 1, considering fault/LOS constraints */
-  void tdf_podem_v2(const fptr);        /* generate test vector 2, injection/activation/propagation */
-  void tdf_podem_x(void);               /* dynamic test compression by podem-x */
+  int tdf_podem_v1(const fptr);         /* generate test vector 1, considering fault/LOS constraints */
+  int tdf_podem_v2(const fptr);         /* generate test vector 2, injection/activation/propagation */
+  int tdf_podem_x(void);                /* dynamic test compression by podem-x */
   void static_compression(void);        /* static test compression */
 
   /* detail declaration of WIRE, NODE, and FAULT classes */

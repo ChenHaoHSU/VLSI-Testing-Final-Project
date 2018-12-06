@@ -96,21 +96,24 @@ ATPG::fptr ATPG::select_secondary_fault()
 }
 
 /* generate test vector 1, considering fault/LOS constraints */
-void ATPG::tdf_podem_v1(const fptr fault) 
+int ATPG::tdf_podem_v1(const fptr fault) 
 {
 
+  return FALSE;
 }       
 
 /* generate test vector 2, injection/activation/propagation */
-void ATPG::tdf_podem_v2(const fptr fault) 
+int ATPG::tdf_podem_v2(const fptr fault) 
 {
 
+  return FALSE;
 }       
 
 /* dynamic test compression by podem-x */
-void ATPG::tdf_podem_x()  
+int ATPG::tdf_podem_x()  
 {
 
+  return FALSE;
 }
 
 /* static test compression */
