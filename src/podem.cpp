@@ -353,12 +353,11 @@ ATPG::wptr ATPG::find_pi_assignment(const wptr object_wire, const int& object_le
         break;
       case  NOR:
       case  AND:
-		// TODO find the input wire  
-    // Hint similar to OR and NAND but different polarity
-    //--------------------------------- hole -------------------------------------------
-
-    //----------------------------------------------------------------------------------
-		//  TODO 
+		// TODO  similar to OR and NAND but different polarity
+        if (object_level) new_object_wire = find_hardest_control(object_wire->inode.front());
+        else new_object_wire = find_easiest_control(object_wire->inode.front());
+        break;
+		//  TODO END
       case  NOT:
       case  BUF:
         new_object_wire = object_wire->inode.front()->iwire.front();
@@ -396,12 +395,11 @@ ATPG::wptr ATPG::find_hardest_control(const nptr n) {
 /* Fig 9.5 */
 ATPG::wptr ATPG::find_easiest_control(const nptr n) {
   int i, nin;
-  // TODO  find the input with min level
-  // Hint: similar to hardiest_control but increasing level order
-  //--------------------------------- hole -------------------------------------------
-
-  //----------------------------------------------------------------------------------
-  //  TODO 
+  // TODO  similar to hardiest_control but increasing level order
+  for (i = 0, nin = n->iwire.size(); i < nin; i++) {
+    if (n->iwire[i]->value == U) return(n->iwire[i]);
+  }
+  //  TODO END
   return(nullptr);
 }/* end of find_easiest_control */
 
@@ -446,9 +444,23 @@ bool ATPG::trace_unknown_path(const wptr w) {
 	//TODO search X-path
 	//HINT if w is PO, return TRUE, if not, check all its fanout 
 	//------------------------------------- hole ---------------------------------------
-
+  if(w->flag & OUTPUT) // if w is PO
+    return true; // a X path has been found
+  else // check all its fanout
+  {
+    for(i=0,nout=w->onode.size(); i<nout; i++)
+    {
+      if(w->onode[i]->owire.front()->value == U) // if unknown value exists
+      {
+        // down trace. if X-path exists, return TRUE.
+        if(trace_unknown_path(w->onode[i]->owire.front()))
+          return true;
+      }
+    } // end of search
+    return false; // if program runs out the for loop, there is no X-path
+  }
+	//----------------------------------------------------------------------------------
   return false; // X-path disappear
-  //TODO 
 }/* end of trace_unknown_path */
 
 
@@ -461,9 +473,14 @@ bool ATPG::check_test(void) {
 	//TODO check if any fault effect reach PO
 	//HINT check every PO for their value
 	//--------------------------------- hole -------------------------------------------
-
+  for(i=0, ncktout = cktout.size(); i<ncktout; i++)
+  {
+    if((cktout[i]->value == D) || (cktout[i]->value == B)) // if there is D or D-bar on the PO
+    {
+      is_test = true;
+    }
+  }
 	//----------------------------------------------------------------------------------
-  //TODO
   return is_test;
 }/* end of check_test */
 
@@ -549,10 +566,15 @@ int ATPG::set_uniquely_implied_value(const fptr fault) {
 	//TODO fault excitation
 	//HINT use backward_imply function to check if fault can excite or not
 	//------------------------------------ hole ----------------------------------------
-
-
-  //----------------------------------------------------------------------------------
-  //TODO
+	// set output of GUT opposite to stuck fault direction(Fig.8.3),
+	// and do backward implication
+	switch(backward_imply(w, !(fault->fault_type)))
+	{
+		case TRUE: pi_is_reach = TRUE; break; // if the backward implication reaches any PI
+		case CONFLICT: return CONFLICT; break; // if it is impossible to achieve or set the initial objective
+		case FALSE: break; // if it has not reached any PI, let pi_is_reach remain FALSE
+	}
+   //----------------------------------------------------------------------------------
 
   return(pi_is_reach);
 }/* end of set_uniquely_implied_value */
