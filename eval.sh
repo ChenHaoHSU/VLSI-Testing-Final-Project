@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EVAL=./eval/atpg
+EVAL=./eval/golden_tdfsim
 CIR_PATH=./sample_circuits
 PAT_PATH=./tdf_patterns
 
@@ -16,7 +16,7 @@ print_help () {
 }
 
 if [ $# -eq 1 ]; then
-    $EVAL -tdfsim $PAT_FILE $CKT_FILE
+    $EVAL -ndet 1 -tdfsim $PAT_FILE $CKT_FILE
 else
     print_help
 fi

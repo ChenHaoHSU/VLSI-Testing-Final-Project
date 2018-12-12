@@ -98,10 +98,14 @@ void ATPG::display_undetect(void) {
     }
     file << "fault_type = ";
     switch (f->fault_type) {
-      case STUCK0:
-        file << "s-a-0\n"; break;
-      case STUCK1:
-        file << "s-a-1\n"; break;
+      // case STUCK0:
+      //   file << "s-a-0\n"; break;
+      // case STUCK1:
+      //   file << "s-a-1\n"; break;
+      case STR:
+        file << "STR\n"; break;
+      case STF:
+        file << "STF\n"; break;
     }
     file << "detection flag =";
     switch (f->detect) {
@@ -144,10 +148,14 @@ void ATPG::display_fault(fptr f) {
   }
   fprintf(stdout,"fault_type = ");
   switch (f->fault_type) {
-    case STUCK0:
-      fprintf(stdout,"s-a-0\n"); break;
-    case STUCK1:
-      fprintf(stdout,"s-a-1\n"); break;
+    // case STUCK0:
+    //   fprintf(stdout,"s-a-0\n"); break;
+    // case STUCK1:
+    //   fprintf(stdout,"s-a-1\n"); break;
+    case STR:
+      fprintf(stdout,"STR\n"); break;
+    case STF:
+      fprintf(stdout,"STF\n"); break;
   }
   fprintf(stdout,"detection flag =");
   switch (f->detect) {
