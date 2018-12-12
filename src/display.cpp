@@ -53,16 +53,16 @@ void ATPG::display_io(void) {
   }
   fprintf(stdout,"'");
 
-  fprintf(stdout," ");
-  for (i = 0; i < cktout.size(); i++) {
-    switch (cktout[i]->value) {
-      case 0: fprintf(stdout,"0"); break;
-      case 1: fprintf(stdout,"1"); break;
-      case U: fprintf(stdout,"x"); break;
-      case D: fprintf(stdout,"D"); break;
-      case B: fprintf(stdout,"B"); break;
-    }
-  }
+  // fprintf(stdout," ");
+  // for (i = 0; i < cktout.size(); i++) {
+  //   switch (cktout[i]->value) {
+  //     case 0: fprintf(stdout,"0"); break;
+  //     case 1: fprintf(stdout,"1"); break;
+  //     case U: fprintf(stdout,"x"); break;
+  //     case D: fprintf(stdout,"D"); break;
+  //     case B: fprintf(stdout,"B"); break;
+  //   }
+  // }
 
   fprintf(stdout,"\n");
 }/* end of display_io */
@@ -171,3 +171,19 @@ void ATPG::display_fault(fptr f) {
   }
   fprintf(stdout,"\n");
 }/* end of display_fault */
+
+void ATPG::display_test_patterns() const {
+  int i;
+  int ncktin;
+  
+  ncktin = cktin.size();
+
+  for (const string& vec : vectors) {
+    assert(vec.size() == cktin.size() + 1);
+    fprintf(stdout, "T\'");
+    for (i = 0; i < ncktin; ++i) {
+      fprintf(stdout, "%c", vec[i]);
+    }
+    fprintf(stdout, " %c\'\n", vec.back());
+  }
+}

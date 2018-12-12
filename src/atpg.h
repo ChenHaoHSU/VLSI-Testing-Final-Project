@@ -152,9 +152,6 @@ private:
   int file_no;                         /* number of current file */
   double StartTime, LastTime;
 
-  /* orginally declared tdfatpg.c */
-  vector<string> vPatterns; // test patterns by tdfatpg
-  
   int hashcode(const string&);
   wptr wfind(const string&);
   nptr nfind(const string&);
@@ -226,6 +223,7 @@ private:
   void display_io(void);
   void display_undetect(void);
   void display_fault(fptr);
+  void display_test_patterns() const;
 
   /*defined in tdfsim.cpp*/
   void tdfsim_a_vector(const string&, int&);

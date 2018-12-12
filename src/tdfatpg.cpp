@@ -39,7 +39,7 @@ void ATPG::transition_delay_fault_atpg(void) {
         /* If we want mutiple petterns per fault, 
          * NO fault simulation.  drop ONLY the fault under test */ 
         else {
-          fault_under_test->detect = TRUE;
+          // fault_under_test->detect = TRUE;
           /* drop fault_under_test */
           flist_undetect.remove(fault_under_test);
         }
@@ -47,7 +47,7 @@ void ATPG::transition_delay_fault_atpg(void) {
         break;
 
 	  case FALSE:
-        fault_under_test->detect = REDUNDANT;
+        // fault_under_test->detect = REDUNDANT;
         no_of_redundant_faults++;
         break;
   
@@ -67,7 +67,10 @@ void ATPG::transition_delay_fault_atpg(void) {
     no_of_calls++;
   }
 
-  display_undetect();
+  // display_undetect();
+
+  display_test_patterns();
+
   fprintf(stdout,"\n");
   fprintf(stdout,"#number of aborted faults = %d\n",no_of_aborted_faults);
   fprintf(stdout,"\n");
@@ -235,10 +238,18 @@ again:  if (wpi) {
           case 1: break;
           case D: cktin[i]->value = 1; break;
           case B: cktin[i]->value = 0; break;
-          // case U: cktin[i]->value = rand()&01; break; // random fill U
+          case U: cktin[i]->value = rand()&01; break; // random fill U
         }
       }
       // display_io();
+      
+      string vec(ncktin+1, '0');
+      for (i = 0; i < ncktin; i++) {
+        vec[i] = itoc(cktin[i]->value);
+      }
+      vec.back() = '0';
+      vectors.emplace_back(vec);
+
       tdf_podem_v2(fault);
     }
     else fprintf(stdout, "\n");  // do not random fill when multiple patterns per fault
