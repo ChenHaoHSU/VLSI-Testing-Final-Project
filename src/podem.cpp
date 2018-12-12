@@ -7,8 +7,6 @@
 
 #include "atpg.h"
 
-#define CONFLICT 2
-
 /* generates a single pattern for a single fault */
 int ATPG::podem(const fptr fault, int& current_backtracks) {
   int i,ncktwire,ncktin;
@@ -189,10 +187,11 @@ ATPG::wptr ATPG::fault_evaluate(const fptr fault) {
       if (fault->node->type == OUTPUT) return(nullptr);
       evaluate(fault->node);  // five-valued, evaluate one gate only, sim.c
       w->value = temp1;
-	  /* if GUT gate output changed */
+
+	    /* if GUT gate output changed */
       if (fault->node->owire.front()->flag & CHANGED) {
-	    fault->node->owire.front()->flag &= ~CHANGED; // stop GUT output change propagation 
-	    return (fault->node->owire.front()); // returns the output wire of GUT
+        fault->node->owire.front()->flag &= ~CHANGED; // stop GUT output change propagation 
+        return (fault->node->owire.front()); // returns the output wire of GUT
       }
       else return(nullptr); // faulty gate output does not change
     }
@@ -209,7 +208,7 @@ void ATPG::forward_imply(const wptr w) {
     if (w->onode[i]->type != OUTPUT) {
       evaluate(w->onode[i]);
       if (w->onode[i]->owire.front()->flag & CHANGED)
-	    forward_imply(w->onode[i]->owire.front()); // go one level further
+	      forward_imply(w->onode[i]->owire.front()); // go one level further
       w->onode[i]->owire.front()->flag &= ~CHANGED;
     }
   }
@@ -665,7 +664,7 @@ int ATPG::backward_imply(const wptr current_wire, const int& desired_logic_value
           case TRUE: pi_is_reach = TRUE; break;
           case CONFLICT: return(CONFLICT); break;
           case FALSE: break;
-         }
+        }
         break;
     }
 	
