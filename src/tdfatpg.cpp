@@ -245,9 +245,9 @@ again:  if (wpi) {
       
       string vec(ncktin+1, '0');
       for (i = 0; i < ncktin; i++) {
-        vec[i] = itoc(cktin[i]->value);
+        vec[i+1] = itoc(cktin[i]->value);
       }
-      vec.back() = '0';
+      vec.front() = '0';
       vectors.emplace_back(vec);
 
       tdf_podem_v2(fault);
