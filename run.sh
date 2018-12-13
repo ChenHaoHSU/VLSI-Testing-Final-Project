@@ -13,13 +13,15 @@ PAT_FILE=$PAT_PATH/c$1.pat
 
 print_help () {
     echo "[Help]"
-    echo "========================================================"
-    echo "Usage: ./run.sh ckt# [c] [<n> <#det>]                   "
-    echo "========================================================"
-    echo "Example: ./run.sh 17        (c17)                       "
-    echo "         ./run.sh 17 c      (c17 + compression)         "
-    echo "         ./run.sh 17 n 8    (c17 + ndet 8)              "
-    echo "         ./run.sh 17 c n 8  (c17 + compression + ndet 8)"
+    echo "==========================================================="
+    echo "Usage: ./run.sh ckt# [c] [<n> <#det>]                      "
+    echo "==========================================================="
+    echo "Example: ./run.sh 17        (c17)                          "
+    echo "         ./run.sh 17 c      (c17 + compression)            "
+    echo "         ./run.sh 17 n 8    (c17 + ndet 8)                 "
+    echo "         ./run.sh 17 c n 8  (c17 + compression + ndet 8)   "
+    echo "==========================================================="
+    echo "Circuits: 17 432 499 880 1355 1908 2670 3540 5315 6288 7552"
 }
 
 if [ "$printOnScreen" = true ] # Print stdout to the screen
