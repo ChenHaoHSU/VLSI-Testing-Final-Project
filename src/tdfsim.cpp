@@ -273,8 +273,15 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect) {
   flist_undetect.remove_if(
     [&](const fptr fptr_ele){
       if (fptr_ele->detect == TRUE) {
-        num_of_current_detect += fptr_ele->eqv_fault_num;
-        return true;
+        fptr_ele->detected_time += 1;
+        if (fptr_ele->detected_time >= detection_num) {
+          num_of_current_detect += fptr_ele->eqv_fault_num;
+          return true;
+        }
+        else {
+          fptr_ele->detect = FALSE;
+          return false;
+        }
       }
       else {
         return false;

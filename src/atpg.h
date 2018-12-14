@@ -141,7 +141,7 @@ private:
   bool tdfsim_only;                    /* flag to indicate tdfault simulation only */
   bool tdfatpg_only;                   /* flag to indicate tdfault atpg only */
   bool compression;                    /* flag to indicate test compression mode on */
-  int detection_num;                   /* number of detection */
+  int detection_num;                   /* number of detection for "-ndet" option*/
 
   /* orginally declared input.c */
   int debug;                           /* != 0 if debugging;  this is a switch of debug mode */
@@ -238,6 +238,7 @@ private:
   int tdf_podem_v2(const fptr);            /* generate test vector 2, injection/activation/propagation */
   int tdf_podem_x(void);                   /* dynamic test compression by podem-x */
   void static_compression(void);           /* static test compression */
+  int tdf_backtrace(const wptr, const int&);
 
   /* detail declaration of WIRE, NODE, and FAULT classes */
   class WIRE {
@@ -292,4 +293,7 @@ private:
     int fault_no;              /* fault index */
     int detected_time;
   };
+
+  int nV2Fail;
+  int nV1Fail;
 };

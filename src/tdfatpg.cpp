@@ -27,9 +27,8 @@ void ATPG::transition_delay_fault_atpg(void) {
       case TRUE:
         /* form a vector */
         vec.clear();
-        for (wptr w: cktin) {
-          vec.push_back(itoc(w->value));
-        }
+        assert(!vectors.empty());
+        vec = vectors.back();
         /*by defect, we want only one pattern per fault */
         /*run a fault simulation, drop ALL detected faults */
         if (total_attempt_num == 1) {
@@ -46,14 +45,14 @@ void ATPG::transition_delay_fault_atpg(void) {
         in_vector_no++;
         break;
 
-	  case FALSE:
-        // fault_under_test->detect = REDUNDANT;
-        no_of_redundant_faults++;
-        break;
-  
-	  case MAYBE:
-        no_of_aborted_faults++;
-        break;
+      case FALSE:
+          fault_under_test->detect = REDUNDANT;
+          no_of_redundant_faults++;
+          break;
+    
+      case MAYBE:
+          no_of_aborted_faults++;
+          break;
     }
     fault_under_test->test_tried = true;
     fault_under_test = nullptr;
@@ -111,6 +110,7 @@ int ATPG::tdf_podem_v1(const fptr fault, int& current_backtracks)
   ncktin = cktin.size();
   for (i = 0; i < ncktwire; i++) {
     sort_wlist[i]->value = U;
+    sort_wlist[i]->value_v1 = U;
   }
   no_of_backtracks = 0;
   find_test = false;
@@ -165,7 +165,7 @@ int ATPG::tdf_podem_v1(const fptr fault, int& current_backtracks)
           decision_tree.front()->flag |= CHANGED; // this PI has been changed
           decision_tree.front()->flag |= ALL_ASSIGNED;
           no_of_backtracks++;
-          wpi = decision_tree.front(); 
+          wpi = decision_tree.front();
         }
       } // while decision tree && ! wpi
       if (wpi == nullptr) no_test = true; //decision tree empty,  Fig 7.9
@@ -223,11 +223,6 @@ again:  if (wpi) {
   
   unmark_propagate_tree(fault->node);
   
-  /* Reset PI fixed flag */
-  for (i = 0; i < ncktin; ++i) {
-    cktin[i]->fixed = false;
-  }
-
   if (find_test) {
     /* normally, we want one pattern per fault */
     if (total_attempt_num == 1) {
@@ -238,19 +233,20 @@ again:  if (wpi) {
           case 1: break;
           case D: cktin[i]->value = 1; break;
           case B: cktin[i]->value = 0; break;
-          case U: cktin[i]->value = rand()&01; break; // random fill U
+          // case U: cktin[i]->value = rand()&01; break; // random fill U
         }
       }
       // display_io();
-      
-      string vec(ncktin+1, '0');
-      for (i = 0; i < ncktin; i++) {
-        vec[i+1] = itoc(cktin[i]->value);
-      }
-      vec.front() = '0';
-      vectors.emplace_back(vec);
 
-      tdf_podem_v2(fault);
+      if (tdf_podem_v2(fault) == TRUE) {
+        string vec(ncktin + 1, '0');
+        for (i = 0; i < ncktin; i++) {
+          vec[i] = itoc(cktin[i]->value_v1);
+        }
+        vec.back() = itoc(cktin[0]->value);
+        vectors.emplace_back(vec);
+        // cerr << "vec = " << vec << endl;
+      }
     }
     else fprintf(stdout, "\n");  // do not random fill when multiple patterns per fault
     return(TRUE);
@@ -271,15 +267,21 @@ int ATPG::tdf_podem_v2(const fptr fault)
 {
   int i, ncktin;
 
+  ncktin = cktin.size();
+
   /* shift v2, assign to value_v1, set fixed */
   for (i = 1; i < ncktin; ++i) {
     if (cktin[i]->value != U) {
       cktin[i - 1]->value_v1 = cktin[i]->value;
       cktin[i - 1]->fixed = true;
     }
+    else {
+      cktin[i - 1]->value_v1 = U;
+      cktin[i - 1]->fixed = false;
+    }
   }
 
-  return FALSE;
+  return tdf_backtrace(sort_wlist[fault->to_swlist], fault->fault_type);
 }       
 
 /* dynamic test compression by podem-x */
@@ -292,5 +294,10 @@ int ATPG::tdf_podem_x()
 /* static test compression */
 void ATPG::static_compression()  
 {
+  // TODO
+}
 
-}          
+/* backtrace to PIs */
+int ATPG::tdf_backtrace(const wptr current_wire, const int& desired_logic_value) {
+  return TRUE;
+}/* end of backtrace */

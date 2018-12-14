@@ -173,16 +173,17 @@ void ATPG::display_fault(fptr f) {
 }/* end of display_fault */
 
 void ATPG::display_test_patterns() const {
-  int i;
+  int i, j;
   int ncktin;
   
   ncktin = cktin.size();
 
-  for (const string& vec : vectors) {
+  for (i = vectors.size() - 1; i >= 0; --i) {
+    const string& vec = vectors[i];
     assert(vec.size() == cktin.size() + 1);
     fprintf(stdout, "T\'");
-    for (i = 0; i < ncktin; ++i) {
-      fprintf(stdout, "%c", vec[i]);
+    for (j = 0; j < ncktin; ++j) {
+      fprintf(stdout, "%c", vec[j]);
     }
     fprintf(stdout, " %c\'\n", vec.back());
   }
