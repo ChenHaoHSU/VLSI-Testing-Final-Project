@@ -23,7 +23,7 @@ void ATPG::transition_delay_fault_atpg(void) {
 
   /* generate test pattern */
   while (fault_under_test != nullptr) {
-    switch (tdf_podem_v1(fault_under_test, current_backtracks)) {
+    switch (tdf_podem_v2(fault_under_test, current_backtracks)) {
       case TRUE:
         /* form a vector */
         vec.clear();
@@ -95,9 +95,31 @@ ATPG::fptr ATPG::select_secondary_fault()
 
   return fault_selected;
 }
+  
+/* generate test vector 1, injection/activation/propagation */
+int ATPG::tdf_podem_v1(const fptr fault) 
+{
+  int i, ncktin;
 
-/* generate test vector 1, considering fault/LOS constraints */
-int ATPG::tdf_podem_v1(const fptr fault, int& current_backtracks) 
+  ncktin = cktin.size();
+
+  /* shift v2, assign to value_v1, set fixed */
+  for (i = 1; i < ncktin; ++i) {
+    if (cktin[i]->value != U) {
+      cktin[i - 1]->value_v1 = cktin[i]->value;
+      cktin[i - 1]->fixed = true;
+    }
+    else {
+      cktin[i - 1]->value_v1 = U;
+      cktin[i - 1]->fixed = false;
+    }
+  }
+
+  return tdf_backtrace(sort_wlist[fault->to_swlist], fault->fault_type);
+}       
+
+/* generate test vector 2, considering fault/LOS constraints */
+int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks) 
 {
   int i,ncktwire,ncktin;
   wptr wpi; // points to the PI currently being assigned
@@ -238,7 +260,7 @@ again:  if (wpi) {
       }
       // display_io();
 
-      if (tdf_podem_v2(fault) == TRUE) {
+      if (tdf_podem_v1(fault) == TRUE) {
         string vec(ncktin + 1, '0');
         for (i = 0; i < ncktin; i++) {
           vec[i] = itoc(cktin[i]->value_v1);
@@ -260,29 +282,7 @@ again:  if (wpi) {
     return(MAYBE);
   }
   return FALSE;
-}       
-
-/* generate test vector 2, injection/activation/propagation */
-int ATPG::tdf_podem_v2(const fptr fault) 
-{
-  int i, ncktin;
-
-  ncktin = cktin.size();
-
-  /* shift v2, assign to value_v1, set fixed */
-  for (i = 1; i < ncktin; ++i) {
-    if (cktin[i]->value != U) {
-      cktin[i - 1]->value_v1 = cktin[i]->value;
-      cktin[i - 1]->fixed = true;
-    }
-    else {
-      cktin[i - 1]->value_v1 = U;
-      cktin[i - 1]->fixed = false;
-    }
-  }
-
-  return tdf_backtrace(sort_wlist[fault->to_swlist], fault->fault_type);
-}       
+}     
 
 /* dynamic test compression by podem-x */
 int ATPG::tdf_podem_x()  

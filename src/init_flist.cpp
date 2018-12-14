@@ -210,8 +210,8 @@ void ATPG::create_dummy_gate(void) {
 
 char ATPG::itoc(const int& i) {
   switch (i) {
-    case 1: return '1';
     case 2: return '0';
+    case 1: return '1';
     case 0: return '0';
   }
 }
