@@ -60,4 +60,3 @@ ATPG::FAULT::FAULT() {
   this->fault_no = 0;
   this->detected_time = 0;
 }
-

@@ -10,6 +10,8 @@
 #include "atpg.h"
 
 void ATPG::transition_delay_fault_atpg(void) {
+  srand(0);
+
   string vec;
   int current_detect_num = 0;
   int total_detect_num = 0;
@@ -67,6 +69,8 @@ void ATPG::transition_delay_fault_atpg(void) {
   }
 
   // display_undetect();
+
+  static_compression();
 
   display_test_patterns();
 
@@ -294,7 +298,35 @@ int ATPG::tdf_podem_x()
 /* static test compression */
 void ATPG::static_compression()  
 {
-  // TODO
+  int detect_num = 0;
+
+  vector<int> order(vectors.size());
+  vector<bool> dropped(vectors.size(), false);
+  iota(order.begin(), order.end(), 0);
+  reverse(order.begin(), order.end());
+
+  for (int i = 0; i < 10; ++i) {
+    generate_fault_list();
+    int drop_count = 0;
+    for (int s : order) {
+      if (!dropped[s]) {
+        tdfsim_a_vector(vectors[s], detect_num);
+        if (detect_num == 0) {
+          dropped[s] = true;
+          ++drop_count;
+        }
+      }
+    }
+    random_shuffle(order.begin(), order.end());
+  }
+
+  vector<string> compressed_vectors;
+  for (size_t i = 0; i < vectors.size(); ++i) {
+    if (!dropped[i]) {
+      compressed_vectors.emplace_back(vectors[i]);
+    }
+  }
+  vectors = compressed_vectors;
 }
 
 /* backtrace to PIs */

@@ -12,6 +12,9 @@
 /* the way of fault collapsing is different from what we teach in class
    need modification */
 void ATPG::generate_fault_list(void) {
+  flist.clear();
+  flist_undetect.clear();
+
   int fault_num;
   wptr w;
   nptr n;
@@ -87,6 +90,7 @@ void ATPG::generate_fault_list(void) {
   fault_num = 0;
   for (fptr f: flist_undetect) {
     f->fault_no = fault_num;
+    f->detected_time = 0;
     fault_num++;
     //cout << f->fault_no << f->node->name << ":" << (f->io?"O":"I") << (f->io?9:(f->index)) << "SA" << f->fault_type << endl;
   }

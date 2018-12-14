@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cassert>
+#include <numeric>
 
 #define HASHSIZE 3911
 
@@ -226,7 +227,7 @@ private:
   void display_test_patterns() const;
 
   /*defined in tdfsim.cpp*/
-  void tdfsim_a_vector(const string&, int&);
+  void tdfsim_a_vector(const string& vec, int& num_of_current_detect);
   void tdf_inject_fault_value(const wptr, const int&, const int&);
   wptr tdf_get_faulty_wire(const fptr, int&);
   
