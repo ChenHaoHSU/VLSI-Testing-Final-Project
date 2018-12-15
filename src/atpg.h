@@ -22,11 +22,8 @@
 #include <ctime>
 #include <cassert>
 #include <numeric>
-<<<<<<< Updated upstream
 #include <climits>
-=======
 #include <unordered_set>
->>>>>>> Stashed changes
 
 #define HASHSIZE 3911
 
