@@ -67,6 +67,22 @@ void ATPG::display_io(void) {
   fprintf(stdout,"\n");
 }/* end of display_io */
 
+void ATPG::display_io_v1(void) {
+  int i;
+
+  fprintf(stdout,"D\'");
+  for (i = 0; i < cktin.size(); i++) {
+    switch (cktin[i]->value_v1) {
+      case 0: fprintf(stdout,"0"); break;
+      case 1: fprintf(stdout,"1"); break;
+      case U: fprintf(stdout,"x"); break;
+      case D: fprintf(stdout,"1"); break;
+      case B: fprintf(stdout,"0"); break;
+    }
+  }
+  fprintf(stdout,"'");
+  fprintf(stdout,"\n");
+}
 
 void ATPG::display_undetect(void) {
   int i;
@@ -186,5 +202,28 @@ void ATPG::display_test_patterns() const {
       fprintf(stdout, "%c", vec[j]);
     }
     fprintf(stdout, " %c\'\n", vec.back());
+  }
+}
+
+
+void ATPG::display_sort_wlist() const {
+  auto itoc2 = [] (const int i) {
+    switch(i) {
+      case 0: return '0';
+      case 1: return '1';
+      case U: return 'x';
+      case D: return 'D';
+      case B: return 'B';
+    }
+    return 'G';
+  };
+
+  for (const wptr w : sort_wlist) {
+    if (w->flag & INPUT)
+      fprintf(stderr, "[%2d] i %s %c %c\n", w->wlist_index, w->name.c_str(), itoc2(w->value_v1), itoc2(w->value));
+    else if (w->flag & OUTPUT)
+      fprintf(stderr, "[%2d] o %s %c %c\n", w->wlist_index, w->name.c_str(), itoc2(w->value_v1), itoc2(w->value));
+    else
+      fprintf(stderr, "[%2d] - %s %c %c\n", w->wlist_index, w->name.c_str(), itoc2(w->value_v1), itoc2(w->value));
   }
 }

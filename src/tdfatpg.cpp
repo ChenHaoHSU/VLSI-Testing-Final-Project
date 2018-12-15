@@ -9,6 +9,8 @@
 
 #include "atpg.h"
 
+#define RANDOM_PATTERN_NUM 10000
+
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
 
@@ -252,14 +254,13 @@ again:  if (wpi) {
         }
         vec.back() = itoc(cktin[0]->value);
         vectors.emplace_back(vec);
-        // cerr << "vec = " << vec << endl;
         return(TRUE);
       }
     }
     else fprintf(stdout, "\n");  // do not random fill when multiple patterns per fault
   }
   else if (no_test) {
-    /*fprintf(stdout,"redundant fault...\n");*/
+    // fprintf(stdout,"redundant fault...\n");
     return(FALSE);
   }
   else {
@@ -273,178 +274,142 @@ again:  if (wpi) {
 int ATPG::tdf_podem_v1(const fptr fault) 
 {
   int i, ncktin;
+  wptr faulty_wire;
 
   ncktin = cktin.size();
+  faulty_wire = sort_wlist[fault->to_swlist];
 
   /* shift v2, assign to value_v1, set fixed */
   for (i = 1; i < ncktin; ++i) {
     if (cktin[i]->value != U) {
       cktin[i - 1]->value_v1 = cktin[i]->value;
       cktin[i - 1]->fixed = true;
-      cktin[i - 1]->flag |= CHANGED;
     }
     else {
       cktin[i - 1]->value_v1 = U;
       cktin[i - 1]->fixed = false;
-      cktin[i - 1]->flag &= ~CHANGED;
     }
   }
 
-  int ret = tdf_set_uniquely_implied_value(fault);
-
-  for (i = 1; i < ncktin; ++i) {
-    cktin[i]->flag &= ~CHANGED;
+  for (i = 0; i < ncktin; ++i) {
+    cktin[i]->flag &= ~MARKED2;
+    cktin[i]->flag &= ~CHANGED2;
+    cktin[i]->flag &= ~ALL_ASSIGNED2;
   }
+
+  vector<wptr> fanin_cone_wlist; // follow topological order
+  vector<wptr> pi_wlist; // only non-fixed PIs
+
+  /* mark all wires in the fanin cone */
+  mark_propagate_tree(faulty_wire, fanin_cone_wlist, pi_wlist);
+
+  /* unmark all wires in the fanin cone */
+  for (wptr w : fanin_cone_wlist) {
+    w->flag &= ~MARKED2;
+  }
+
+  auto partial_sim = [&] (vector<wptr> &wlist) -> void {
+    for (int i = 0, nwire = wlist.size(); i < nwire; ++i) {
+      if (wlist[i]->flag & INPUT) continue;
+      evaluate_v1(wlist[i]->inode.front());
+    }
+    return;
+  };
+
+  /* sim fixed value_v1 */
+  partial_sim(fanin_cone_wlist);
+  if (faulty_wire->value_v1 != U) {
+    if (faulty_wire->value_v1 == fault->fault_type) {
+      // fprintf(stderr, "TRUE\n");
+      return TRUE;
+    }
+    else {
+      // fprintf(stderr, "FALSE\n");
+      return FALSE;
+    }
+  }
+
+  // display_sort_wlist();
+
+  // no decision can be made; return FALSE
+  if (pi_wlist.empty()) return FALSE;
+
+  int ret = FALSE;
+  int no_of_backtracks = 0;
+  wptr current_wire; // must be pi
+  int decision_level = 0; // 0 <= decision_level <= pi_wlist.size() - 1
+
+  while (decision_level >= 0 || no_of_backtracks > 2000) {
+    // reach the last decision level
+    if (decision_level >= pi_wlist.size()) {
+      --decision_level;
+      continue;
+    }
+
+    current_wire = pi_wlist[decision_level];
+
+    if (current_wire->value_v1 == U) {
+      current_wire->value_v1 = 0;
+      current_wire->flag &= ~ALL_ASSIGNED2;
+    }
+    else if (current_wire->flag & ALL_ASSIGNED2) {
+      current_wire->flag &= ~ALL_ASSIGNED2;
+      current_wire->value_v1 = U;
+      --decision_level;
+      continue;
+    }
+    else {
+      current_wire->value_v1 = current_wire->value_v1 ^ 1;
+      current_wire->flag |= ALL_ASSIGNED2;
+      ++no_of_backtracks;
+    }
+
+    partial_sim(fanin_cone_wlist); // forward imply?
+    if (faulty_wire->value_v1 == fault->fault_type) {
+      ret = TRUE;
+      break;
+    }
+    else if (faulty_wire->value_v1 == U) {
+      ++decision_level;
+    }
+  }
+
+/*
+  cerr << pi_wlist.size() << " / " << cktin.size() 
+       << " (" << ((double)pi_wlist.size()/(double)cktin.size() * 100) << "%) " << endl;
+
+  fprintf(stderr, "%s\n", (ret == TRUE ? "TRUE" : "FALSE"));
+  fprintf(stderr, "faulty wire: %s %d\n", faulty_wire->name.c_str(), fault->fault_type);
+  fprintf(stderr, "Fanins:\n");
+  for (const wptr w : fanin_cone_wlist) {
+    fprintf(stderr, " %s", w->name.c_str());
+  }
+  fprintf(stderr, "\n");
+  fprintf(stderr, "PIs:\n");
+  for (const wptr w : pi_wlist) {
+    assert(w->flag & INPUT);
+    fprintf(stderr, " %s", w->name.c_str());
+  }
+  fprintf(stderr, "\n");
+  getchar();
+*/
 
   return ret;
 }
 
-int ATPG::tdf_set_uniquely_implied_value(const fptr fault) {
-  wptr w;
-  int pi_is_reach = FALSE;
-  int i,nin;
+void ATPG::mark_propagate_tree(const wptr w, vector<wptr> &fanin_cone_wlist, vector<wptr> &pi_wlist) {
+  if (w->flag & MARKED2) return;
 
-  nin = fault->node->iwire.size();
-  if (fault->io) w = fault->node->owire.front();  //  gate output fault, Fig.8.3
-  else { // gate input fault.  Fig. 8.4 
-    w = fault->node->iwire[fault->index]; 
-
-    switch (fault->node->type) {
-      case NOT:
-      case BUF:
-      break;
-	    // return(pi_is_reach);
-
-	    /* assign all side inputs to non-controlling values */
-      case AND:
-      case NAND:
-         for (i = 0; i < nin; i++) {
-           if (fault->node->iwire[i] != w) {
-             switch (backward_imply(fault->node->iwire[i],1)) {
-                case TRUE: pi_is_reach = TRUE; break;
-                case CONFLICT: return(CONFLICT); break;
-                case FALSE: break;
-             }
-           }
-         }
-         break;
-
-      case OR:
-      case NOR:
-         for (i = 0; i < nin; i++) {
-           if (fault->node->iwire[i] != w) {
-             switch (backward_imply(fault->node->iwire[i],0)) {
-                case TRUE: pi_is_reach = TRUE; break;
-                case CONFLICT: return(CONFLICT); break;
-                case FALSE: break;
-             }
-           }
-         }
-         break;
+  int i, j, ninode, niwire;
+  w->flag |= MARKED2;
+  for (i = 0, ninode = w->inode.size(); i < ninode; ++i) {
+    for (j = 0, niwire = w->inode[i]->iwire.size(); j < niwire; ++j) {
+      mark_propagate_tree(w->inode[i]->iwire[j], fanin_cone_wlist, pi_wlist);
     }
-  } // else , gate input fault 
-  
-	switch(backward_imply(w, fault->fault_type))
-	{
-		case TRUE: pi_is_reach = TRUE; break; // if the backward implication reaches any PI
-		case CONFLICT: return CONFLICT; break; // if it is impossible to achieve or set the initial objective
-		case FALSE: break; // if it has not reached any PI, let pi_is_reach remain FALSE
-	}
-   //----------------------------------------------------------------------------------
-
-  return(pi_is_reach);
-}/* end of tdf_set_uniquely_implied_value */
-
-/* for backtrace */
-int ATPG::tdf_backward_imply(const wptr current_wire, const int& desired_logic_value) {
-  int pi_is_reach = FALSE;
-  int i, nin;
-
-  nin = current_wire->inode.front()->iwire.size();
-  if (current_wire->flag & INPUT) { // if PI
-    if (current_wire->value_v1 != U &&  
-      current_wire->value_v1 != desired_logic_value) { 
-      return(CONFLICT); // conlict with previous assignment
-    }
-    current_wire->value_v1 = desired_logic_value; // assign PI to the objective value
-    current_wire->flag |= CHANGED; 
-    // CHANGED means the logic value on this wire has recently been changed
-    return(TRUE);
   }
-  else { // if not PI
-    switch (current_wire->inode.front()->type) {
-      /* assign NOT input opposite to its objective ouput */
-      /* go backward iteratively.  depth first search */
-      case NOT:
-        switch (backward_imply(current_wire->inode.front()->iwire.front(), (desired_logic_value ^ 1))) {
-          case TRUE: pi_is_reach = TRUE; break;
-          case CONFLICT: return(CONFLICT); break;
-          case FALSE: break;
-        }
-        break;
-
-		/* if objective is NAND output=zero, then NAND inputs are all ones  
-		 * keep doing this back implication iteratively  */
-      case NAND:
-        if (desired_logic_value == 0) {
-          for (i = 0; i < nin; i++) {
-            switch (backward_imply(current_wire->inode.front()->iwire[i],1)) {
-              case TRUE: pi_is_reach = TRUE; break;
-              case CONFLICT: return(CONFLICT); break;
-              case FALSE: break;
-            }
-          }
-        }
-        break;
-
-      case AND:
-        if (desired_logic_value == 1) {
-          for (i = 0; i < nin; i++) {
-            switch (backward_imply(current_wire->inode.front()->iwire[i],1)) {
-              case TRUE: pi_is_reach = TRUE; break;
-              case CONFLICT: return(CONFLICT); break;
-              case FALSE: break;
-            }
-          }
-        }
-        break;
-
-      case OR:
-        if (desired_logic_value == 0) {
-          for (i = 0; i < nin; i++) {
-            switch (backward_imply(current_wire->inode.front()->iwire[i],0)) {
-              case TRUE: pi_is_reach = TRUE; break;
-              case CONFLICT: return(CONFLICT); break;
-              case FALSE: break;
-            }
-          }
-        }
-        break;
-
-      case NOR:
-        if (desired_logic_value == 1) {
-          for (i = 0; i < nin; i++) {
-            switch (backward_imply(current_wire->inode.front()->iwire[i],0)) {
-              case TRUE: pi_is_reach = TRUE; break;
-              case CONFLICT: return(CONFLICT); break;
-              case FALSE: break;
-            }
-          }
-        }
-        break;
-
-      case BUF:
-        switch (backward_imply(current_wire->inode.front()->iwire.front(),desired_logic_value)) {
-          case TRUE: pi_is_reach = TRUE; break;
-          case CONFLICT: return(CONFLICT); break;
-          case FALSE: break;
-        }
-        break;
-    }
-	
-    return(pi_is_reach);
-  }
-}/* end of tdf_backward_imply */
+  fanin_cone_wlist.emplace_back(w);
+  if ((w->flag & INPUT) && (w->value_v1 == U)) pi_wlist.emplace_back(w);
+}
 
 /* dynamic test compression by podem-x */
 int ATPG::tdf_podem_x()  
@@ -491,7 +456,7 @@ void ATPG::random_pattern_generation() {
   unordered_set<string> sVector;
   string vec1(cktin.size() + 1, '0');
   string vec2(cktin.size() + 1, '0');
-  for (int i = 0; i < 100000; ++i) {
+  for (int i = 0; i < RANDOM_PATTERN_NUM; ++i) {
     for (int j = 0; j < cktin.size() + 1; ++j) {
       if (rand() % 2) {
         vec1[j] = '0';
@@ -510,3 +475,16 @@ void ATPG::random_pattern_generation() {
     }
   }
 }
+
+void ATPG::forward_imply_v1(const wptr w) {
+  int i,nout;
+
+  for (i = 0, nout = w->onode.size(); i < nout; i++) {
+    if (w->onode[i]->type != OUTPUT) {
+      evaluate_v1(w->onode[i]);
+      if (w->onode[i]->owire.front()->flag & CHANGED)
+	      forward_imply(w->onode[i]->owire.front()); // go one level further
+      w->onode[i]->owire.front()->flag &= ~CHANGED;
+    }
+  }
+}/* end of forward_imply */

@@ -41,16 +41,19 @@
 #define SCVCC    20
 
 /* possible values for wire flag */
-#define SCHEDULED       1
-#define ALL_ASSIGNED    2
-/*#define INPUT         4*/
-/*#define OUTPUT        8*/
-#define MARKED         16
-#define FAULT_INJECTED 32
-#define FAULTY         64
-#define CHANGED       128
-#define FICTITIOUS    256
-#define PSTATE       1024
+#define SCHEDULED           1
+#define ALL_ASSIGNED        2
+/*#define INPUT             4*/
+/*#define OUTPUT            8*/
+#define MARKED             16
+#define FAULT_INJECTED     32
+#define FAULTY             64
+#define CHANGED           128
+#define FICTITIOUS        256
+#define PSTATE           1024
+#define MARKED2          2048
+#define CHANGED2         4096
+#define ALL_ASSIGNED2    8192
 
 /* miscellaneous substitutions */
 #define MAYBE          2
@@ -179,6 +182,7 @@ private:
   /* orginally declared in sim.c */
   void sim(void);
   void evaluate(nptr);
+  void evaluate_v1(nptr);
   int ctoi(const char&);
   
   /* orginally declared in faultsim.c */
@@ -225,9 +229,11 @@ private:
   /* orginally declared in display.c */
   void display_line(fptr);
   void display_io(void);
+  void display_io_v1(void);
   void display_undetect(void);
   void display_fault(fptr);
   void display_test_patterns() const;
+  void display_sort_wlist() const;
 
   /* defined in tdfsim.cpp */
   void tdfsim_a_vector(const string& vec, int& num_of_current_detect);
@@ -246,6 +252,9 @@ private:
   int tdf_set_uniquely_implied_value(const fptr fault);
   int tdf_backward_imply(const wptr current_wire, const int& desired_logic_value);
   void random_pattern_generation();
+  void mark_propagate_tree(const wptr w, vector<wptr> &fanin_cone_wlist, vector<wptr> &pi_wlist);
+  void forward_imply_v1(const wptr w);
+
 
   /* defined in scoap.cpp */
   void calculate_cc(void);                 /* calculate controllability */
@@ -310,7 +319,4 @@ private:
     int fault_no;              /* fault index */
     int detected_time;
   };
-
-  int nV2Fail;
-  int nV1Fail;
 };

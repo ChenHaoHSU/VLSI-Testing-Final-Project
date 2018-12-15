@@ -57,8 +57,7 @@ int ATPG::podem(const fptr fault, int& current_backtracks) {
       /* insert a new PI into decision_tree */
       decision_tree.push_front(wpi);
     }
-    else { // no test possible using this assignment, backtrack. 
-
+    else { // no test possible using this assignment, backtrack.
       while (!decision_tree.empty() && (wpi == nullptr)) {
         /* if both 01 already tried, backtrack. Fig.7.7 */
         if (decision_tree.front()->flag & ALL_ASSIGNED) {
