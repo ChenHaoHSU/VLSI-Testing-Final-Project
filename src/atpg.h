@@ -14,6 +14,7 @@
 #include <array>
 #include <memory>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <cstring>
 #include <cstdio>
@@ -21,6 +22,7 @@
 #include <ctime>
 #include <cassert>
 #include <numeric>
+#include <climits>
 
 #define HASHSIZE 3911
 
@@ -226,12 +228,12 @@ private:
   void display_fault(fptr);
   void display_test_patterns() const;
 
-  /*defined in tdfsim.cpp*/
+  /* defined in tdfsim.cpp */
   void tdfsim_a_vector(const string& vec, int& num_of_current_detect);
   void tdf_inject_fault_value(const wptr, const int&, const int&);
   wptr tdf_get_faulty_wire(const fptr, int&);
   
-  /*defined in tdfatpg.cpp*/
+  /* defined in tdfatpg.cpp */
   void transition_delay_fault_atpg(void);  /* transition delay fault ATPG, test patterns stored in ATPG::vPatterns */
   fptr select_primary_fault(void);         /* select a primary fault for podem */
   fptr select_secondary_fault(void);       /* select a secondary fault for podem_x */
@@ -240,6 +242,11 @@ private:
   int tdf_podem_x(void);                   /* dynamic test compression by podem-x */
   void static_compression(void);           /* static test compression */
   int tdf_backtrace(const wptr, const int&);
+
+  /* defined in scoap.cpp */
+  void calculate_cc(void);                 /* calculate controllability */
+  void calculate_co(void);                 /* calculate obervability */
+  void display_scoap(void);                /* display scoap */
 
   /* detail declaration of WIRE, NODE, and FAULT classes */
   class WIRE {
@@ -264,6 +271,11 @@ private:
     int wlist_index;           /* index into the sorted_wlist array */
     int value_v1;
     bool fixed;
+
+    int cc0;                   /* 0-controllability in SCOAP */
+    int cc1;                   /* 1-controllability in SCOAP */
+    vector<int> co;            /* observability in SCOAP, vector size = #(branches + stem) 
+                                  co[i] is associated with onode[i], co.back() is associated with the stem */
   };
   
   class NODE {

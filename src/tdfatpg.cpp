@@ -21,6 +21,9 @@ void ATPG::transition_delay_fault_atpg(void) {
   int no_of_redundant_faults = 0;
   int no_of_calls = 0;
 
+  calculate_cc();
+  calculate_co();
+
   fptr fault_under_test = select_primary_fault();
 
   /* generate test pattern */
