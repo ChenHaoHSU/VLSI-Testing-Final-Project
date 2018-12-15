@@ -254,7 +254,12 @@ private:
   void random_pattern_generation();
   void mark_propagate_tree(const wptr w, vector<wptr> &fanin_cone_wlist, vector<wptr> &pi_wlist);
   void forward_imply_v1(const wptr w);
+  wptr find_pi_assignment_v1(const wptr, const int&);
+  wptr find_hardest_control_v1(const nptr);
+  wptr find_easiest_control_v1(const nptr);
 
+  int backtrack_limit_v1v2; 
+  int backtrack_limit_v1;
 
   /* defined in scoap.cpp */
   void calculate_cc(void);                 /* calculate controllability */

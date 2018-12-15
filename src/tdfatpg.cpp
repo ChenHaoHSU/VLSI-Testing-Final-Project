@@ -9,10 +9,13 @@
 
 #include "atpg.h"
 
-#define RANDOM_PATTERN_NUM 10000
+#define RANDOM_PATTERN_NUM 1000000
 
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
+
+  backtrack_limit_v1v2 = 1;
+  backtrack_limit_v1 = 200;
 
   string vec;
   int current_detect_num = 0;
@@ -113,6 +116,7 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
   forward_list<wptr> decision_tree; // design_tree (a LIFO stack)
   wptr wfault;
   int attempt_num = 0;  // counts the number of pattern generated so far for the given fault
+  int backtrack_v1v2 = 0;
 
   /* initialize all circuit wires to unknown */
   ncktwire = sort_wlist.size();
@@ -218,6 +222,7 @@ again:  if (wpi) {
             }
           }
           if (!wpi) no_test = true;
+          assert(0);
           goto again;  // if we want multiple patterns per fault
         } // if total_attempt_num > attempt_num
       }  // if check_test()
@@ -256,6 +261,12 @@ again:  if (wpi) {
         vectors.emplace_back(vec);
         return(TRUE);
       }
+      else if (backtrack_v1v2++ < backtrack_limit_v1v2) {
+        no_of_backtracks = 0;
+        find_test = false;
+        no_test = false;
+        goto again;
+      }
     }
     else fprintf(stdout, "\n");  // do not random fill when multiple patterns per fault
   }
@@ -273,7 +284,7 @@ again:  if (wpi) {
 /* generate test vector 1, injection/activation/propagation */
 int ATPG::tdf_podem_v1(const fptr fault) 
 {
-  int i, ncktin;
+   int i, ncktin;
   wptr faulty_wire;
 
   ncktin = cktin.size();
@@ -339,7 +350,7 @@ int ATPG::tdf_podem_v1(const fptr fault)
   wptr current_wire; // must be pi
   int decision_level = 0; // 0 <= decision_level <= pi_wlist.size() - 1
 
-  while (decision_level >= 0 || no_of_backtracks > 2000) {
+  while (decision_level >= 0 && no_of_backtracks <= backtrack_limit_v1) {
     // reach the last decision level
     if (decision_level >= pi_wlist.size()) {
       --decision_level;
@@ -488,3 +499,73 @@ void ATPG::forward_imply_v1(const wptr w) {
     }
   }
 }/* end of forward_imply */
+
+ATPG::wptr ATPG::find_pi_assignment_v1(const wptr object_wire, const int& object_level) {
+  wptr new_object_wire;
+  int new_object_level;
+  
+  /* if PI, assign the same value as objective Fig 9.1, 9.2 */
+  if (object_wire->flag & INPUT) {
+    object_wire->value_v1 = object_level;
+    return(object_wire);
+  }
+
+  /* if not PI, backtrace to PI  Fig 9.3, 9.4, 9.5*/
+  else {
+    switch(object_wire->inode.front()->type) {
+      case   OR:
+      case NAND:
+        if (object_level) new_object_wire = find_easiest_control_v1(object_wire->inode.front());  // decision gate
+        else new_object_wire = find_hardest_control_v1(object_wire->inode.front()); // imply gate
+        break;
+      case  NOR:
+      case  AND:
+		// TODO  similar to OR and NAND but different polarity
+        if (object_level) new_object_wire = find_hardest_control_v1(object_wire->inode.front());
+        else new_object_wire = find_easiest_control_v1(object_wire->inode.front());
+        break;
+		//  TODO END
+      case  NOT:
+      case  BUF:
+        new_object_wire = object_wire->inode.front()->iwire.front();
+        break;
+    }
+
+    switch (object_wire->inode.front()->type) {
+      case  BUF:
+      case  AND:
+      case   OR: new_object_level = object_level; break;
+      /* flip objective value  Fig 9.6 */
+      case  NOT:
+      case  NOR:
+      case NAND: new_object_level = object_level ^ 1; break;
+    }
+    if (new_object_wire) return(find_pi_assignment_v1(new_object_wire,new_object_level));
+    else return(nullptr);
+  }
+}/* end of find_pi_assignment */
+
+
+/* Fig 9.4 */
+ATPG::wptr ATPG::find_hardest_control_v1(const nptr n) {
+  int i;
+  
+  /* because gate inputs are arranged in a increasing level order,
+   * larger input index means harder to control */
+  for (i = n->iwire.size() - 1; i >= 0; i--) {
+    if (n->iwire[i]->value_v1 == U) return(n->iwire[i]);
+  }
+  return(nullptr);
+}/* end of find_hardest_control */
+
+
+/* Fig 9.5 */
+ATPG::wptr ATPG::find_easiest_control_v1(const nptr n) {
+  int i, nin;
+  // TODO  similar to hardiest_control but increasing level order
+  for (i = 0, nin = n->iwire.size(); i < nin; i++) {
+    if (n->iwire[i]->value_v1 == U) return(n->iwire[i]);
+  }
+  //  TODO END
+  return(nullptr);
+}/* end of find_easiest_control */
