@@ -14,8 +14,7 @@
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
 
-  backtrack_limit_v1v2 = 1;
-  backtrack_limit_v1 = 200;
+  backtrack_limit_v1 = 2000;
 
   string vec;
   int current_detect_num = 0;
@@ -116,7 +115,6 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
   forward_list<wptr> decision_tree; // design_tree (a LIFO stack)
   wptr wfault;
   int attempt_num = 0;  // counts the number of pattern generated so far for the given fault
-  int backtrack_v1v2 = 0;
 
   /* initialize all circuit wires to unknown */
   ncktwire = sort_wlist.size();
@@ -161,8 +159,7 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
       /* insert a new PI into decision_tree */
       decision_tree.push_front(wpi);
     }
-    else { // no test possible using this assignment, backtrack. 
-
+    else { // no test possible using this assignment, backtrack.
       while (!decision_tree.empty() && (wpi == nullptr)) {
         /* if both 01 already tried, backtrack. Fig.7.7 */
         if (decision_tree.front()->flag & ALL_ASSIGNED) {
@@ -189,8 +186,39 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
 again:  if (wpi) {
       sim();
       if (wfault = fault_evaluate(fault)) forward_imply(wfault);
-      if (check_test()) {
+      if (check_test() && (tdf_podem_v1(fault) == TRUE)) {
+        /* set find_test true */
         find_test = true;
+        /* fill value and value_v1 with 0 or 1. (no D, B, U) */
+        for (i = 0; i < ncktin; i++) {
+          switch (cktin[i]->value) {
+            case 0:
+            case B:
+              cktin[i]->value = 0; break;
+            case 1:
+            case D: 
+              cktin[i]->value = 1; break;
+            case U: 
+              cktin[i]->value = rand()&01; break;
+          }
+          switch (cktin[i]->value_v1) {
+            case 0:
+            case B:
+              cktin[i]->value_v1 = 0; break;
+            case 1:
+            case D: 
+              cktin[i]->value_v1 = 1; break;
+            case U: 
+              cktin[i]->value_v1 = rand()&01; break;
+          }
+        }
+        /* form the generated pattern and push back to vectors */
+        string vec(ncktin + 1, '0');
+        for (i = 0; i < ncktin; i++) {
+          vec[i] = itoc(cktin[i]->value_v1);
+        }
+        vec.back() = itoc(cktin[0]->value);
+        vectors.emplace_back(vec);
         /* if multiple patterns per fault, print out every test cube */
         if (total_attempt_num > 1) {
           if (attempt_num == 0) {
@@ -222,7 +250,6 @@ again:  if (wpi) {
             }
           }
           if (!wpi) no_test = true;
-          assert(0);
           goto again;  // if we want multiple patterns per fault
         } // if total_attempt_num > attempt_num
       }  // if check_test()
@@ -240,33 +267,16 @@ again:  if (wpi) {
   if (find_test) {
     /* normally, we want one pattern per fault */
     if (total_attempt_num == 1) {
-	  
-      for (i = 0; i < ncktin; i++) {
-        switch (cktin[i]->value) {
-          case 0:
-          case 1: break;
-          case D: cktin[i]->value = 1; break;
-          case B: cktin[i]->value = 0; break;
-          // case U: cktin[i]->value = rand()&01; break; // random fill U
-        }
-      }
+      // for (i = 0; i < ncktin; i++) {
+      //   switch (cktin[i]->value) {
+      //     case 0:
+      //     case 1: break;
+      //     case D: cktin[i]->value = 1; break;
+      //     case B: cktin[i]->value = 0; break;
+      //     // case U: cktin[i]->value = rand()&01; break; // random fill U
+      //   }
+      // }
       // display_io();
-
-      if (tdf_podem_v1(fault) == TRUE) {
-        string vec(ncktin + 1, '0');
-        for (i = 0; i < ncktin; i++) {
-          vec[i] = itoc(cktin[i]->value_v1);
-        }
-        vec.back() = itoc(cktin[0]->value);
-        vectors.emplace_back(vec);
-        return(TRUE);
-      }
-      else if (backtrack_v1v2++ < backtrack_limit_v1v2) {
-        no_of_backtracks = 0;
-        find_test = false;
-        no_test = false;
-        goto again;
-      }
     }
     else fprintf(stdout, "\n");  // do not random fill when multiple patterns per fault
   }
@@ -290,15 +300,20 @@ int ATPG::tdf_podem_v1(const fptr fault)
   ncktin = cktin.size();
   faulty_wire = sort_wlist[fault->to_swlist];
 
-  /* shift v2, assign to value_v1, set fixed */
+  /* shift v2, assign to value_v1 */
   for (i = 1; i < ncktin; ++i) {
-    if (cktin[i]->value != U) {
-      cktin[i - 1]->value_v1 = cktin[i]->value;
-      cktin[i - 1]->fixed = true;
-    }
-    else {
-      cktin[i - 1]->value_v1 = U;
-      cktin[i - 1]->fixed = false;
+    switch (cktin[i]->value) {
+      case 0:
+      case B:
+        cktin[i-1]->value_v1 = 0;
+        break;
+      case 1:
+      case D:
+        cktin[i-1]->value_v1 = 1;
+        break;
+      case U:
+        cktin[i-1]->value_v1 = U;
+        break;
     }
   }
 
@@ -346,12 +361,12 @@ int ATPG::tdf_podem_v1(const fptr fault)
   if (pi_wlist.empty()) return FALSE;
 
   int ret = FALSE;
-  int no_of_backtracks = 0;
-  wptr current_wire; // must be pi
+  int no_of_backtracks_v1 = 0;
   int decision_level = 0; // 0 <= decision_level <= pi_wlist.size() - 1
+  wptr current_wire; // must be pi
 
-  while (decision_level >= 0 && no_of_backtracks <= backtrack_limit_v1) {
-    // reach the last decision level
+  while (decision_level >= 0 && no_of_backtracks_v1 <= backtrack_limit_v1) {
+    /* reach the last decision level */
     if (decision_level >= pi_wlist.size()) {
       --decision_level;
       continue;
@@ -493,9 +508,9 @@ void ATPG::forward_imply_v1(const wptr w) {
   for (i = 0, nout = w->onode.size(); i < nout; i++) {
     if (w->onode[i]->type != OUTPUT) {
       evaluate_v1(w->onode[i]);
-      if (w->onode[i]->owire.front()->flag & CHANGED)
+      if (w->onode[i]->owire.front()->flag & CHANGED2)
 	      forward_imply(w->onode[i]->owire.front()); // go one level further
-      w->onode[i]->owire.front()->flag &= ~CHANGED;
+      w->onode[i]->owire.front()->flag &= ~CHANGED2;
     }
   }
 }/* end of forward_imply */

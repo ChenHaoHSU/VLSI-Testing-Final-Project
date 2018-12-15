@@ -258,7 +258,6 @@ private:
   wptr find_hardest_control_v1(const nptr);
   wptr find_easiest_control_v1(const nptr);
 
-  int backtrack_limit_v1v2; 
   int backtrack_limit_v1;
 
   /* defined in scoap.cpp */
@@ -288,7 +287,6 @@ private:
     int fault_flag;            /* indicates the fault-injected bit position, for pfedfs */
     int wlist_index;           /* index into the sorted_wlist array */
     int value_v1;
-    bool fixed;
 
     int cc0;                   /* 0-controllability in SCOAP */
     int cc1;                   /* 1-controllability in SCOAP */

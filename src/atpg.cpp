@@ -40,7 +40,6 @@ ATPG::WIRE::WIRE() {
   this->fault_flag = 0;
   this->wlist_index = 0;
   this->value_v1 = 0;
-  this->fixed = false;
   this->cc0 = 0;
   this->cc1 = 0;
 }
