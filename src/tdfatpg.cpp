@@ -144,12 +144,23 @@ ATPG::fptr ATPG::select_secondary_fault()
     if (!have_u) return nullptr;
   }
   
-  /* backtrace from PO */
+  /* select possible faults */
   std::vector<fptr> secondary_fault_list;
   for (fptr f: flist_undetect) {
-    secondary_fault_list.push_back(f);
+    wptr w = sort_wlist[f->to_swlist];
+    if (f->fault_type == STUCK0) {
+      if (w->value == U && (w->value_v1 == U || w->value_v1 == 0)) {
+        secondary_fault_list.push_back(f);
+      }
+    }
+    else {
+      if (w->value == U && (w->value_v1 == U || w->value_v1 == 1)) {
+        secondary_fault_list.push_back(f);
+      }
+    }
   }
   
+  /* select a prefered fault */
   switch (dtype) {
     RANDOM:
       std::random_shuffle(secondary_fault_list.begin(), secondary_fault_list.end());
@@ -176,6 +187,7 @@ ATPG::fptr ATPG::select_secondary_fault()
       break;
   }
 
+  if (secondary_fault_list.empty()) return nullptr;
   fptr fault_selected = secondary_fault_list.front();
   return fault_selected;
 }
