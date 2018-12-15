@@ -21,6 +21,7 @@
 #include <ctime>
 #include <cassert>
 #include <numeric>
+#include <map>
 
 #define HASHSIZE 3911
 
@@ -48,6 +49,7 @@
 #define CHANGED       128
 #define FICTITIOUS    256
 #define PSTATE       1024
+#define PODEMX_VISITED 2048
 
 /* miscellaneous substitutions */
 #define MAYBE          2
@@ -125,6 +127,7 @@ private:
   /* orginally declared in miscell.h */
   forward_list<fptr_s> flist;          /* fault list */
   forward_list<fptr> flist_undetect;   /* undetected fault list */
+  map<std::pair<nptr, short>, std::pair<fptr,fptr> > wfmap;    /* wire -> fault query, key = nptr + index (-1 = GO) */
 
   /* orginally declared in global.h */
   vector<wptr> sort_wlist;             /* sorted wire list with regard to level */
