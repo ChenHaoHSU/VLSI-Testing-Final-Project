@@ -10,12 +10,12 @@
 #include "atpg.h"
 
 void ATPG::transition_delay_fault_atpg(void) {
-  srand(0);
+  srand(0); // what's your lucky number?
 
   string vec;
   int current_detect_num = 0;
   int total_detect_num = 0;
-  int total_no_of_backtracks = 0;  // accumulative number of backtracks
+  int total_no_of_backtracks = 0; // accumulative number of backtracks
   int current_backtracks = 0;
   int no_of_aborted_faults = 0;
   int no_of_redundant_faults = 0;
@@ -103,28 +103,6 @@ ATPG::fptr ATPG::select_secondary_fault()
   return fault_selected;
 }
   
-/* generate test vector 1, injection/activation/propagation */
-int ATPG::tdf_podem_v1(const fptr fault) 
-{
-  int i, ncktin;
-
-  ncktin = cktin.size();
-
-  /* shift v2, assign to value_v1, set fixed */
-  for (i = 1; i < ncktin; ++i) {
-    if (cktin[i]->value != U) {
-      cktin[i - 1]->value_v1 = cktin[i]->value;
-      cktin[i - 1]->fixed = true;
-    }
-    else {
-      cktin[i - 1]->value_v1 = U;
-      cktin[i - 1]->fixed = false;
-    }
-  }
-
-  return tdf_backtrace(sort_wlist[fault->to_swlist], fault->fault_type);
-}       
-
 /* generate test vector 2, considering fault/LOS constraints */
 int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks) 
 {
@@ -275,10 +253,10 @@ again:  if (wpi) {
         vec.back() = itoc(cktin[0]->value);
         vectors.emplace_back(vec);
         // cerr << "vec = " << vec << endl;
+        return(TRUE);
       }
     }
     else fprintf(stdout, "\n");  // do not random fill when multiple patterns per fault
-    return(TRUE);
   }
   else if (no_test) {
     /*fprintf(stdout,"redundant fault...\n");*/
@@ -291,10 +269,186 @@ again:  if (wpi) {
   return FALSE;
 }     
 
+/* generate test vector 1, injection/activation/propagation */
+int ATPG::tdf_podem_v1(const fptr fault) 
+{
+  int i, ncktin;
+
+  ncktin = cktin.size();
+
+  /* shift v2, assign to value_v1, set fixed */
+  for (i = 1; i < ncktin; ++i) {
+    if (cktin[i]->value != U) {
+      cktin[i - 1]->value_v1 = cktin[i]->value;
+      cktin[i - 1]->fixed = true;
+      cktin[i - 1]->flag |= CHANGED;
+    }
+    else {
+      cktin[i - 1]->value_v1 = U;
+      cktin[i - 1]->fixed = false;
+      cktin[i - 1]->flag &= ~CHANGED;
+    }
+  }
+
+  int ret = tdf_set_uniquely_implied_value(fault);
+
+  for (i = 1; i < ncktin; ++i) {
+    cktin[i]->flag &= ~CHANGED;
+  }
+
+  return ret;
+}
+
+int ATPG::tdf_set_uniquely_implied_value(const fptr fault) {
+  wptr w;
+  int pi_is_reach = FALSE;
+  int i,nin;
+
+  nin = fault->node->iwire.size();
+  if (fault->io) w = fault->node->owire.front();  //  gate output fault, Fig.8.3
+  else { // gate input fault.  Fig. 8.4 
+    w = fault->node->iwire[fault->index]; 
+
+    switch (fault->node->type) {
+      case NOT:
+      case BUF:
+      break;
+	    // return(pi_is_reach);
+
+	    /* assign all side inputs to non-controlling values */
+      case AND:
+      case NAND:
+         for (i = 0; i < nin; i++) {
+           if (fault->node->iwire[i] != w) {
+             switch (backward_imply(fault->node->iwire[i],1)) {
+                case TRUE: pi_is_reach = TRUE; break;
+                case CONFLICT: return(CONFLICT); break;
+                case FALSE: break;
+             }
+           }
+         }
+         break;
+
+      case OR:
+      case NOR:
+         for (i = 0; i < nin; i++) {
+           if (fault->node->iwire[i] != w) {
+             switch (backward_imply(fault->node->iwire[i],0)) {
+                case TRUE: pi_is_reach = TRUE; break;
+                case CONFLICT: return(CONFLICT); break;
+                case FALSE: break;
+             }
+           }
+         }
+         break;
+    }
+  } // else , gate input fault 
+  
+	switch(backward_imply(w, fault->fault_type))
+	{
+		case TRUE: pi_is_reach = TRUE; break; // if the backward implication reaches any PI
+		case CONFLICT: return CONFLICT; break; // if it is impossible to achieve or set the initial objective
+		case FALSE: break; // if it has not reached any PI, let pi_is_reach remain FALSE
+	}
+   //----------------------------------------------------------------------------------
+
+  return(pi_is_reach);
+}/* end of tdf_set_uniquely_implied_value */
+
+/* for backtrace */
+int ATPG::tdf_backward_imply(const wptr current_wire, const int& desired_logic_value) {
+  int pi_is_reach = FALSE;
+  int i, nin;
+
+  nin = current_wire->inode.front()->iwire.size();
+  if (current_wire->flag & INPUT) { // if PI
+    if (current_wire->value_v1 != U &&  
+      current_wire->value_v1 != desired_logic_value) { 
+      return(CONFLICT); // conlict with previous assignment
+    }
+    current_wire->value_v1 = desired_logic_value; // assign PI to the objective value
+    current_wire->flag |= CHANGED; 
+    // CHANGED means the logic value on this wire has recently been changed
+    return(TRUE);
+  }
+  else { // if not PI
+    switch (current_wire->inode.front()->type) {
+      /* assign NOT input opposite to its objective ouput */
+      /* go backward iteratively.  depth first search */
+      case NOT:
+        switch (backward_imply(current_wire->inode.front()->iwire.front(), (desired_logic_value ^ 1))) {
+          case TRUE: pi_is_reach = TRUE; break;
+          case CONFLICT: return(CONFLICT); break;
+          case FALSE: break;
+        }
+        break;
+
+		/* if objective is NAND output=zero, then NAND inputs are all ones  
+		 * keep doing this back implication iteratively  */
+      case NAND:
+        if (desired_logic_value == 0) {
+          for (i = 0; i < nin; i++) {
+            switch (backward_imply(current_wire->inode.front()->iwire[i],1)) {
+              case TRUE: pi_is_reach = TRUE; break;
+              case CONFLICT: return(CONFLICT); break;
+              case FALSE: break;
+            }
+          }
+        }
+        break;
+
+      case AND:
+        if (desired_logic_value == 1) {
+          for (i = 0; i < nin; i++) {
+            switch (backward_imply(current_wire->inode.front()->iwire[i],1)) {
+              case TRUE: pi_is_reach = TRUE; break;
+              case CONFLICT: return(CONFLICT); break;
+              case FALSE: break;
+            }
+          }
+        }
+        break;
+
+      case OR:
+        if (desired_logic_value == 0) {
+          for (i = 0; i < nin; i++) {
+            switch (backward_imply(current_wire->inode.front()->iwire[i],0)) {
+              case TRUE: pi_is_reach = TRUE; break;
+              case CONFLICT: return(CONFLICT); break;
+              case FALSE: break;
+            }
+          }
+        }
+        break;
+
+      case NOR:
+        if (desired_logic_value == 1) {
+          for (i = 0; i < nin; i++) {
+            switch (backward_imply(current_wire->inode.front()->iwire[i],0)) {
+              case TRUE: pi_is_reach = TRUE; break;
+              case CONFLICT: return(CONFLICT); break;
+              case FALSE: break;
+            }
+          }
+        }
+        break;
+
+      case BUF:
+        switch (backward_imply(current_wire->inode.front()->iwire.front(),desired_logic_value)) {
+          case TRUE: pi_is_reach = TRUE; break;
+          case CONFLICT: return(CONFLICT); break;
+          case FALSE: break;
+        }
+        break;
+    }
+	
+    return(pi_is_reach);
+  }
+}/* end of tdf_backward_imply */
+
 /* dynamic test compression by podem-x */
 int ATPG::tdf_podem_x()  
 {
-
   return FALSE;
 }
 
@@ -308,7 +462,7 @@ void ATPG::static_compression()
   iota(order.begin(), order.end(), 0);
   reverse(order.begin(), order.end());
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 20; ++i) {
     generate_fault_list();
     int drop_count = 0;
     for (int s : order) {
@@ -320,6 +474,7 @@ void ATPG::static_compression()
         }
       }
     }
+    // cerr << drop_count << endl;
     random_shuffle(order.begin(), order.end());
   }
 
@@ -332,7 +487,26 @@ void ATPG::static_compression()
   vectors = compressed_vectors;
 }
 
-/* backtrace to PIs */
-int ATPG::tdf_backtrace(const wptr current_wire, const int& desired_logic_value) {
-  return TRUE;
-}/* end of backtrace */
+void ATPG::random_pattern_generation() {
+  unordered_set<string> sVector;
+  string vec1(cktin.size() + 1, '0');
+  string vec2(cktin.size() + 1, '0');
+  for (int i = 0; i < 100000; ++i) {
+    for (int j = 0; j < cktin.size() + 1; ++j) {
+      if (rand() % 2) {
+        vec1[j] = '0';
+        vec2[j] = '1';
+      }
+      else {
+        vec1[j] = '1';
+        vec2[j] = '0';
+      }
+    }
+    if (sVector.find(vec1) == sVector.end()) {
+      vectors.emplace_back(vec1);
+      vectors.emplace_back(vec2);
+      sVector.emplace(vec1);
+      sVector.emplace(vec2);
+    }
+  }
+}
