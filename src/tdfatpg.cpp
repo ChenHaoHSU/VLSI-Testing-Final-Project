@@ -14,8 +14,6 @@
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
 
-  backtrack_limit_v1 = 2000;
-
   string vec;
   int current_detect_num = 0;
   int total_detect_num = 0;
