@@ -1,6 +1,6 @@
 #!/bin/bash
 printOnScreen=false
-printOnScreen=true
+# printOnScreen=true
 
 EXE=./bin/atpg
 CIR_PATH=./sample_circuits
