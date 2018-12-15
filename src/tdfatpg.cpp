@@ -156,6 +156,8 @@ ATPG::fptr ATPG::select_secondary_fault()
       break;
     DETECT_NUM:
     SCOPE:
+      calculate_cc();
+      calculate_co();
     default:
       break;
   }
