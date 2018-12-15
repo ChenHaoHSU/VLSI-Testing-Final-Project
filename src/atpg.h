@@ -24,6 +24,7 @@
 #include <numeric>
 #include <map>
 #include <climits>
+#include <unordered_set>
 
 #define HASHSIZE 3911
 
@@ -245,6 +246,9 @@ private:
   int tdf_podem_x(void);                   /* dynamic test compression by podem-x */
   void static_compression(void);           /* static test compression */
   int tdf_backtrace(const wptr, const int&);
+  int tdf_set_uniquely_implied_value(const fptr fault);
+  int tdf_backward_imply(const wptr current_wire, const int& desired_logic_value);
+  void random_pattern_generation();
 
   /* defined in scoap.cpp */
   void calculate_cc(void);                 /* calculate controllability */
