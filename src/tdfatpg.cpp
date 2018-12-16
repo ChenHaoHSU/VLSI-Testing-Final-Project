@@ -9,7 +9,8 @@
 
 #include "atpg.h"
 
-#define RANDOM_PATTERN_NUM          1e6
+#define RANDOM_PATTERN_NUM          1e5
+#define RANDOM_PATTERN_FACTOR        10
 #define STATIC_COMPRESSION_NUM        3
 
 void ATPG::transition_delay_fault_atpg(void) {
@@ -388,7 +389,7 @@ int ATPG::tdf_podem_v1(const fptr fault)
     else {
       current_wire->value_v1 = current_wire->value_v1 ^ 1;
       current_wire->flag |= ALL_ASSIGNED2;
-      ++no_of_backtracks;
+      ++no_of_backtracks_v1;
     }
 
     partial_sim(fanin_cone_wlist); // forward imply?
@@ -473,6 +474,18 @@ void ATPG::static_compression()
     total_drop_count += drop_count;
     fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", i, drop_count, total_drop_count);
     random_shuffle(order.begin(), order.end());
+  }
+
+
+  iota(order.begin(), order.end(), 0);
+  generate_fault_list();
+  for (const int s : order) {
+    if (!dropped[s]) {
+      tdfsim_a_vector(vectors[s], detect_num);
+      if (detect_num == 0) {
+        dropped[s] = true;
+      }
+    }
   }
 
   vector<string> compressed_vectors;
