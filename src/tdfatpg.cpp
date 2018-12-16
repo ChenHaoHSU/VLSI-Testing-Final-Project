@@ -11,7 +11,7 @@
 
 #define RANDOM_PATTERN_NUM          1e5
 #define RANDOM_PATTERN_FACTOR        10
-#define STATIC_COMPRESSION_NUM        3
+#define STATIC_COMPRESSION_NUM        5
 
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
@@ -296,10 +296,11 @@ again:  if (wpi) {
 /* generate test vector 1, injection/activation/propagation */
 int ATPG::tdf_podem_v1(const fptr fault) 
 {
-   int i, ncktin;
+   int i, ncktin, desired_value;
   wptr faulty_wire;
 
   ncktin = cktin.size();
+  desired_value = fault->fault_type;
   faulty_wire = sort_wlist[fault->to_swlist];
 
   /* shift v2, assign to value_v1 */
@@ -347,7 +348,7 @@ int ATPG::tdf_podem_v1(const fptr fault)
   /* sim fixed value_v1 */
   partial_sim(fanin_cone_wlist);
   if (faulty_wire->value_v1 != U) {
-    if (faulty_wire->value_v1 == fault->fault_type) {
+    if (faulty_wire->value_v1 == desired_value) {
       // fprintf(stderr, "TRUE\n");
       return TRUE;
     }
@@ -362,13 +363,59 @@ int ATPG::tdf_podem_v1(const fptr fault)
   // no decision can be made; return FALSE
   if (pi_wlist.empty()) return FALSE;
 
+
+  int ret = FALSE;
+  int no_of_backtracks_v1 = 0;
+  forward_list<wptr> decision_tree;
+  wptr current_wire, new_wire; // must be pi
+
+  new_wire = find_pi_assignment_v1(faulty_wire, desired_value);
+
+  if (new_wire == nullptr)
+    return FALSE;
+  else
+    decision_tree.push_front(new_wire);
+
+  while (!decision_tree.empty() && no_of_backtracks_v1 <= backtrack_limit_v1) {
+
+    current_wire = decision_tree.front();
+
+    if (current_wire->flag & ALL_ASSIGNED2) {
+      current_wire->flag &= ~ALL_ASSIGNED2;
+      current_wire->value_v1 = U;
+      decision_tree.pop_front();
+      continue;
+    }
+    else if (current_wire->flag & MARKED2) { // current_wire not all assigned
+      current_wire->value_v1 = current_wire->value_v1 ^ 1;
+      current_wire->flag |= ALL_ASSIGNED2;
+      ++no_of_backtracks_v1;
+    }
+    else {
+      current_wire->flag |= MARKED2;
+    }
+
+    partial_sim(fanin_cone_wlist);
+    if (faulty_wire->value_v1 == desired_value) {
+      ret = TRUE;
+      break;
+    }
+    else if (faulty_wire->value_v1 == U) {
+      new_wire = find_pi_assignment_v1(faulty_wire, desired_value);
+      if (new_wire != nullptr) {
+        decision_tree.push_front(new_wire);
+      }
+    }
+  }
+
+/*
   int ret = FALSE;
   int no_of_backtracks_v1 = 0;
   int decision_level = 0; // 0 <= decision_level <= pi_wlist.size() - 1
   wptr current_wire; // must be pi
 
   while (decision_level >= 0 && no_of_backtracks_v1 <= backtrack_limit_v1) {
-    /* reach the last decision level */
+    // reach the last decision level 
     if (decision_level >= pi_wlist.size()) {
       --decision_level;
       continue;
@@ -393,7 +440,7 @@ int ATPG::tdf_podem_v1(const fptr fault)
     }
 
     partial_sim(fanin_cone_wlist); // forward imply?
-    if (faulty_wire->value_v1 == fault->fault_type) {
+    if (faulty_wire->value_v1 == desired_value) {
       ret = TRUE;
       break;
     }
@@ -401,13 +448,14 @@ int ATPG::tdf_podem_v1(const fptr fault)
       ++decision_level;
     }
   }
+*/
 
 /*
   cerr << pi_wlist.size() << " / " << cktin.size() 
        << " (" << ((double)pi_wlist.size()/(double)cktin.size() * 100) << "%) " << endl;
 
   fprintf(stderr, "%s\n", (ret == TRUE ? "TRUE" : "FALSE"));
-  fprintf(stderr, "faulty wire: %s %d\n", faulty_wire->name.c_str(), fault->fault_type);
+  fprintf(stderr, "faulty wire: %s %d\n", faulty_wire->name.c_str(), desired_value);
   fprintf(stderr, "Fanins:\n");
   for (const wptr w : fanin_cone_wlist) {
     fprintf(stderr, " %s", w->name.c_str());
@@ -421,6 +469,12 @@ int ATPG::tdf_podem_v1(const fptr fault)
   fprintf(stderr, "\n");
   getchar();
 */
+
+  for (i = 0; i < ncktin; ++i) {
+    cktin[i]->flag &= ~MARKED2;
+    cktin[i]->flag &= ~CHANGED2;
+    cktin[i]->flag &= ~ALL_ASSIGNED2;
+  }
 
   return ret;
 }
@@ -449,6 +503,7 @@ int ATPG::tdf_podem_x()
 void ATPG::static_compression()  
 {
   int detect_num = 0;
+  int iter;
 
   vector<int> order(vectors.size());
   vector<bool> dropped(vectors.size(), false);
@@ -458,7 +513,7 @@ void ATPG::static_compression()
   fprintf(stderr, "# Static compression:\n");
   int drop_count, total_drop_count;
   total_drop_count = 0;
-  for (int i = 0; i < STATIC_COMPRESSION_NUM; ++i) {
+  for (iter = 0; iter < STATIC_COMPRESSION_NUM; ++iter) {
     drop_count = 0;
     generate_fault_list();
     for (const int s : order) {
@@ -472,21 +527,24 @@ void ATPG::static_compression()
       }
     }
     total_drop_count += drop_count;
-    fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", i, drop_count, total_drop_count);
+    fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", iter, drop_count, total_drop_count);
     random_shuffle(order.begin(), order.end());
   }
 
-
   iota(order.begin(), order.end(), 0);
+  detect_num = 0;
   generate_fault_list();
   for (const int s : order) {
     if (!dropped[s]) {
       tdfsim_a_vector(vectors[s], detect_num);
       if (detect_num == 0) {
         dropped[s] = true;
+        ++drop_count;
       }
     }
   }
+  total_drop_count += drop_count;
+  fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", iter, drop_count, total_drop_count);
 
   vector<string> compressed_vectors;
   for (size_t i = 0; i < vectors.size(); ++i) {
@@ -540,6 +598,7 @@ ATPG::wptr ATPG::find_pi_assignment_v1(const wptr object_wire, const int& object
   
   /* if PI, assign the same value as objective Fig 9.1, 9.2 */
   if (object_wire->flag & INPUT) {
+    assert(object_wire->value_v1 == U);
     object_wire->value_v1 = object_level;
     return(object_wire);
   }
