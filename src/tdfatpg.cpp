@@ -9,7 +9,8 @@
 
 #include "atpg.h"
 
-#define RANDOM_PATTERN_NUM 1000000
+#define RANDOM_PATTERN_NUM          1e6
+#define STATIC_COMPRESSION_NUM        3
 
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
@@ -75,8 +76,10 @@ void ATPG::transition_delay_fault_atpg(void) {
 
   // display_undetect();
 
+  fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   static_compression();
 
+  fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   display_test_patterns();
 
   fprintf(stdout,"\n");
@@ -451,11 +454,15 @@ void ATPG::static_compression()
   iota(order.begin(), order.end(), 0);
   reverse(order.begin(), order.end());
 
-  for (int i = 0; i < 20; ++i) {
+  fprintf(stderr, "# Static compression:\n");
+  int drop_count, total_drop_count;
+  total_drop_count = 0;
+  for (int i = 0; i < STATIC_COMPRESSION_NUM; ++i) {
+    drop_count = 0;
     generate_fault_list();
-    int drop_count = 0;
-    for (int s : order) {
+    for (const int s : order) {
       if (!dropped[s]) {
+        detect_num = 0;
         tdfsim_a_vector(vectors[s], detect_num);
         if (detect_num == 0) {
           dropped[s] = true;
@@ -463,7 +470,8 @@ void ATPG::static_compression()
         }
       }
     }
-    // cerr << drop_count << endl;
+    total_drop_count += drop_count;
+    fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", i, drop_count, total_drop_count);
     random_shuffle(order.begin(), order.end());
   }
 

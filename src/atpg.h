@@ -6,24 +6,26 @@
 /*           last update : 01/21/2018                                 */
 /**********************************************************************/
 
-#include <algorithm>
-#include <string>
-#include <vector>
-#include <list>
-#include <forward_list>
-#include <array>
-#include <memory>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
+#include <cassert>
+#include <climits>
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <cassert>
+
+#include <algorithm>
+#include <array>
+#include <forward_list>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <memory>
 #include <numeric>
-#include <climits>
+#include <list>
+#include <string>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #define HASHSIZE 3911
 
@@ -236,7 +238,7 @@ private:
   void display_sort_wlist() const;
 
   /* defined in tdfsim.cpp */
-  void tdfsim_a_vector(const string& vec, int& num_of_current_detect);
+  void tdfsim_a_vector(const string& vec, int& num_of_current_detect, const bool do_fault_drop = true);
   void tdf_inject_fault_value(const wptr, const int&, const int&);
   wptr tdf_get_faulty_wire(const fptr, int&);
   

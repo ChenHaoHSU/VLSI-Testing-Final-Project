@@ -33,7 +33,7 @@ void ATPG::transition_delay_fault_simulation() {
 }
 
 /* transition delay fault simulate a single test vector */
-void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect) {
+void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const bool do_fault_drop) {
   
   wptr w,faulty_wire;
   /* array of 16 fptrs, which points to the 16 faults in a simulation packet  */
@@ -270,23 +270,33 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect) {
   } // end loop. for f = flist
 
   /* fault dropping  */
-  flist_undetect.remove_if(
-    [&](const fptr fptr_ele){
-      if (fptr_ele->detect == TRUE) {
-        fptr_ele->detected_time += 1;
-        if (fptr_ele->detected_time >= detection_num) {
-          num_of_current_detect += fptr_ele->eqv_fault_num;
-          return true;
+  if (do_fault_drop) {
+    flist_undetect.remove_if(
+      [&](const fptr fptr_ele){
+        if (fptr_ele->detect == TRUE) {
+          fptr_ele->detected_time += 1;
+          if (fptr_ele->detected_time >= detection_num) {
+            num_of_current_detect += fptr_ele->eqv_fault_num;
+            return true;
+          }
+          else {
+            fptr_ele->detect = FALSE;
+            return false;
+          }
         }
         else {
-          fptr_ele->detect = FALSE;
           return false;
         }
+      });
+  }
+  else { // do_fault_drop == false
+    for (const fptr fptr_ele : flist_undetect) {
+      if (fptr_ele->detect == TRUE) {
+        num_of_current_detect += fptr_ele->eqv_fault_num;
+        fptr_ele->detect = FALSE;
       }
-      else {
-        return false;
-      }
-    });
+    }
+  }
 }
 
 /* Given a gate-input fault f, check if f is propagated to the gate output.
