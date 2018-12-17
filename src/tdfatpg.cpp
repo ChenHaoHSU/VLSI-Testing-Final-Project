@@ -382,6 +382,7 @@ int ATPG::tdf_podem_v1(const fptr fault)
 
     if (current_wire->flag & ALL_ASSIGNED2) {
       current_wire->flag &= ~ALL_ASSIGNED2;
+      current_wire->flag &= ~MARKED2;
       current_wire->value_v1 = U;
       decision_tree.pop_front();
       continue;
@@ -389,6 +390,7 @@ int ATPG::tdf_podem_v1(const fptr fault)
     else if (current_wire->flag & MARKED2) { // current_wire not all assigned
       current_wire->value_v1 = current_wire->value_v1 ^ 1;
       current_wire->flag |= ALL_ASSIGNED2;
+      current_wire->flag &= ~MARKED2;
       ++no_of_backtracks_v1;
     }
     else {
