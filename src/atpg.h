@@ -6,6 +6,8 @@
 /*           last update : 01/21/2018                                 */
 /**********************************************************************/
 
+// #define NDEBUG
+
 #include <cassert>
 #include <climits>
 #include <cstring>
@@ -26,6 +28,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <ext/pb_ds/priority_queue.hpp>
 
 #define HASHSIZE 3911
 
@@ -253,12 +256,15 @@ private:
   int tdf_backtrace(const wptr, const int&);
   int tdf_set_uniquely_implied_value(const fptr fault);
   int tdf_backward_imply(const wptr current_wire, const int& desired_logic_value);
-  void random_pattern_generation();
+  void random_pattern_generation(const bool use_unknown = false);
   void mark_propagate_tree(const wptr w, vector<wptr> &fanin_cone_wlist, vector<wptr> &pi_wlist);
   void forward_imply_v1(const wptr w);
   wptr find_pi_assignment_v1(const wptr, const int&);
   wptr find_hardest_control_v1(const nptr);
   wptr find_easiest_control_v1(const nptr);
+  void compatibility_graph();
+  void fill_x();
+  bool isCompatible(const string& vec1, const string& vec2) const;
 
   int backtrack_limit_v1;
 
@@ -324,4 +330,19 @@ private:
     int fault_no;              /* fault index */
     int detected_time;
   };
+
+  // For compatibility graph (static compression)
+  struct Node {
+    Node() {}
+
+    int idx; // idx in vectors; a node represents a vector in vectors.
+  };
+
+  struct Edge {
+    Edge() {}
+
+    
+
+  };
+
 };

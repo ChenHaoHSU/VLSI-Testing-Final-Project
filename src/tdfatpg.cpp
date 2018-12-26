@@ -9,13 +9,34 @@
 
 #include "atpg.h"
 
-#define RANDOM_PATTERN_NUM          1e5
+#define RANDOM_PATTERN_NUM           10
 #define RANDOM_PATTERN_FACTOR        10
 #define STATIC_COMPRESSION_NUM        5
 
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
 
+  calculate_cc();
+  calculate_co();
+  
+  tdf_podem_x();
+
+  // random_pattern_generation(true);
+  // compatibility_graph();
+  // fill_x();
+
+  fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
+  static_compression();
+
+  fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
+  display_test_patterns();
+  // display_undetect();
+
+}
+
+/* dynamic test compression by podem-x */
+int ATPG::tdf_podem_x()
+{
   string vec;
   int current_detect_num = 0;
   int total_detect_num = 0;
@@ -24,9 +45,6 @@ void ATPG::transition_delay_fault_atpg(void) {
   int no_of_aborted_faults = 0;
   int no_of_redundant_faults = 0;
   int no_of_calls = 0;
-
-  calculate_cc();
-  calculate_co();
 
   fptr fault_under_test = select_primary_fault();
 
@@ -74,14 +92,6 @@ void ATPG::transition_delay_fault_atpg(void) {
     total_no_of_backtracks += current_backtracks; // accumulate number of backtracks
     no_of_calls++;
   }
-
-  // display_undetect();
-
-  fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
-  static_compression();
-
-  fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
-  display_test_patterns();
 
   fprintf(stdout,"\n");
   fprintf(stdout,"#number of aborted faults = %d\n",no_of_aborted_faults);
@@ -363,7 +373,6 @@ int ATPG::tdf_podem_v1(const fptr fault)
   // no decision can be made; return FALSE
   if (pi_wlist.empty()) return FALSE;
 
-
   int ret = FALSE;
   int no_of_backtracks_v1 = 0;
   forward_list<wptr> decision_tree;
@@ -495,12 +504,6 @@ void ATPG::mark_propagate_tree(const wptr w, vector<wptr> &fanin_cone_wlist, vec
   if ((w->flag & INPUT) && (w->value_v1 == U)) pi_wlist.emplace_back(w);
 }
 
-/* dynamic test compression by podem-x */
-int ATPG::tdf_podem_x()  
-{
-  return FALSE;
-}
-
 /* static test compression */
 void ATPG::static_compression()  
 {
@@ -557,26 +560,32 @@ void ATPG::static_compression()
   vectors = compressed_vectors;
 }
 
-void ATPG::random_pattern_generation() {
+void ATPG::random_pattern_generation(const bool use_unknown) {
   unordered_set<string> sVector;
   string vec1(cktin.size() + 1, '0');
   string vec2(cktin.size() + 1, '0');
   for (int i = 0; i < RANDOM_PATTERN_NUM; ++i) {
     for (int j = 0; j < cktin.size() + 1; ++j) {
-      if (rand() % 2) {
-        vec1[j] = '0';
-        vec2[j] = '1';
+      if (use_unknown && (rand() % 2)) {
+        vec1[j] = 'x';
+        vec2[j] = 'x';
       }
       else {
-        vec1[j] = '1';
-        vec2[j] = '0';
+        if (rand() % 2) {
+          vec1[j] = '0';
+          vec2[j] = '1';
+        }
+        else {
+          vec1[j] = '1';
+          vec2[j] = '0';
+        }
       }
     }
     if (sVector.find(vec1) == sVector.end()) {
       vectors.emplace_back(vec1);
-      vectors.emplace_back(vec2);
+      // vectors.emplace_back(vec2);
       sVector.emplace(vec1);
-      sVector.emplace(vec2);
+      // sVector.emplace(vec2);
     }
   }
 }
@@ -657,10 +666,54 @@ ATPG::wptr ATPG::find_hardest_control_v1(const nptr n) {
 /* Fig 9.5 */
 ATPG::wptr ATPG::find_easiest_control_v1(const nptr n) {
   int i, nin;
-  // TODO  similar to hardiest_control but increasing level order
+  // TODO similar to hardiest_control but increasing level order
   for (i = 0, nin = n->iwire.size(); i < nin; i++) {
     if (n->iwire[i]->value_v1 == U) return(n->iwire[i]);
   }
-  //  TODO END
+  // TODO END
   return(nullptr);
 }/* end of find_easiest_control */
+
+void ATPG::fill_x() {
+  int i, len;
+  len =  cktin.size() + 1;
+  for (string& vec : vectors) {
+    assert(vec.size() == len);
+    for (i = 0; i < len; ++i) {
+      if (vec[i] == 'x') {
+        vec[i] = (rand() & 01) ? '1' : '0';
+      }
+    }
+  }
+
+}
+
+void ATPG::compatibility_graph() {
+
+  // typedef __gnu_pbds::priority_queue<Edge*, , __gnu_pbds::thin_heap_tag> PQueue;
+
+  int i, j, nvec;
+  nvec = vectors.size();
+  for (i = 0; i < nvec; ++i) {
+    for (j = i + 1; j < nvec; ++j) {
+      if (isCompatible(vectors[i], vectors[j])) {
+
+      }
+    }
+  }
+
+
+
+}
+
+bool ATPG::isCompatible(const string& vec1, const string& vec2) const {
+  assert(vec1.size() == vec2.size());
+  int i, len;
+  len = vec1.size();
+  for (i = 0; i < len; ++i) {
+    if ((vec1[i] == '1' && vec2[i] == '0') || (vec1[i] == '0' && vec2[i] == '1')) {
+      return false;
+    }
+  }
+  return true;
+}
