@@ -255,21 +255,24 @@ private:
   int tdf_podem_v1(const fptr);            /* generate test vector 1, considering fault/LOS constraints */
   int tdf_podem_v2(const fptr, int&);      /* generate test vector 2, injection/activation/propagation */
   int tdf_podem_x(void);                   /* dynamic test compression by podem-x */
-  void static_compression(void);           /* static test compression */
   int tdf_backtrace(const wptr, const int&);
   int tdf_set_uniquely_implied_value(const fptr fault);
   int tdf_backward_imply(const wptr current_wire, const int& desired_logic_value);
-  void random_pattern_generation(const bool use_unknown = false);
   void mark_propagate_tree(const wptr w, vector<wptr> &fanin_cone_wlist, vector<wptr> &pi_wlist);
   void forward_imply_v1(const wptr w);
   wptr find_pi_assignment_v1(const wptr, const int&);
   wptr find_hardest_control_v1(const nptr);
   wptr find_easiest_control_v1(const nptr);
+  void random_pattern_generation(const bool use_unknown = false);
+  
+  int backtrack_limit_v1;
+
+  /* defined in stc.cpp */
+  void static_compression(void);           /* static test compression */
   void compatibility_graph();
   void fill_x();
   bool isCompatible(const string& vec1, const string& vec2) const;
-
-  int backtrack_limit_v1;
+  void random_simulation();
 
   /* defined in scoap.cpp */
   void calculate_cc(void);                 /* calculate controllability */
