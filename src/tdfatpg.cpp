@@ -100,7 +100,7 @@ ATPG::fptr ATPG::select_secondary_fault()
 {
   /* configurations */
   bool PODEM_X = true;
-  enum DYNAMIC_TYPE { RANDOM, DETECTED_TIME, SCOPE };
+  enum DYNAMIC_TYPE { RANDOM, DETECTED_TIME, SCOAP };
   DYNAMIC_TYPE dtype = RANDOM;
   
   /* if wfmap is not constructed, construct it first */
@@ -170,9 +170,8 @@ ATPG::fptr ATPG::select_secondary_fault()
                 [&](const fptr& a, const fptr& b) {
                     return (a->detected_time < b->detected_time);
                 });
-    SCOPE:
-      calculate_cc();
-      calculate_co();
+      break;
+    SCOAP:
       std::sort(secondary_fault_list.begin(), secondary_fault_list.end(),
                 [&](const fptr& a, const fptr& b) {
                     const wptr wa = sort_wlist[a->to_swlist], wb = sort_wlist[b->to_swlist];
@@ -180,7 +179,7 @@ ATPG::fptr ATPG::select_secondary_fault()
                     double ccb = (b->fault_type == STUCK0) ? wb->cc1 : wb->cc0;
                     double coa = (a->io == GO) ? wa->co.back() : wa->co[a->index];
                     double cob = (b->io == GO) ? wb->co.back() : wb->co[b->index];
-                    return ((cca * coa) < (ccb * cob));
+                    return ((cca * coa) > (ccb * cob));
                 });
       break;
     default:
