@@ -271,9 +271,10 @@ private:
   /* defined in tdfmedop.cpp */
   int tdf_medop_x(void);
   int tdf_medop_v2(const fptr, int&, LIFO&, string&);
-  int tdf_medop_v1(const fptr, int&);
-  wptr find_objective(const fptr, wptr&, int&);
+  int tdf_medop_v1(const fptr, int&, LIFO&, string&);
+  bool find_objective(const fptr, wptr&, int&);
   wptr find_cool_pi(const wptr, int&);
+  void mark_fanin_cone(const wptr, vector<wptr>&);
 
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */

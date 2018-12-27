@@ -1,6 +1,6 @@
 /**********************************************************************/
-/*           Transition Delay Fault ATPG:                             */
-/*           generating the test pattern list,                        */
+/*           Transition Delay Fault ATPG;                             */
+/*           building the pattern list;                               */
 /*           calculating the total fault coverage.                    */
 /*                                                                    */
 /*           Author: Hsiang-Ting Wen, Fu-Yu Chuang, and Chen-Hao Hsu  */
@@ -10,6 +10,8 @@
 #include "atpg.h"
 
 #define RANDOM_PATTERN_NUM           10
+#define RANDOM_PATTERN_FACTOR        10
+#define STATIC_COMPRESSION_NUM        5
 
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
@@ -20,6 +22,8 @@ void ATPG::transition_delay_fault_atpg(void) {
   tdf_podem_x();
 
   // random_pattern_generation(true);
+  // compatibility_graph();
+  // fill_x();
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   static_compression();
@@ -27,6 +31,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   display_test_patterns();
   // display_undetect();
+
 }
 
 /* dynamic test compression by podem-x */
@@ -101,7 +106,13 @@ int ATPG::tdf_podem_x()
 /* select a primary fault for podem */
 ATPG::fptr ATPG::select_primary_fault()
 {
-  fptr fault_selected = flist_undetect.front();
+  fptr fault_selected;
+  for (fptr fptr_ele: flist_undetect) {
+    if (!fptr_ele->test_tried) {
+      fault_selected = fptr_ele;
+      break;
+    }
+  }
 
   return fault_selected;
 }
@@ -586,6 +597,7 @@ void ATPG::mark_propagate_tree(const wptr w, vector<wptr> &fanin_cone_wlist, vec
   fanin_cone_wlist.emplace_back(w);
   if ((w->flag & INPUT) && (w->value_v1 == U)) pi_wlist.emplace_back(w);
 }
+
 
 void ATPG::random_pattern_generation(const bool use_unknown) {
   unordered_set<string> sVector;
