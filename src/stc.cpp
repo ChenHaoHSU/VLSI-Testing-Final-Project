@@ -7,11 +7,12 @@
 /**********************************************************************/
 
 #include "atpg.h"
+#include "disjointSet.h"
 
 #define RANDOM_SIMULATION_ITER_NUM  5
 
 void ATPG::static_compression() {
-  compatibility_graph();
+  // compatibility_graph();
   fill_x();
   random_simulation();
 }
@@ -35,12 +36,28 @@ void ATPG::compatibility_graph() {
 
   int i, j, nvec;
   nvec = vectors.size();
+
+  vector<Node> vNodes(0); /* all nodes are here; vNodes.size() == vectors.size() */
+  vector<Edge> vEdges(0); /* all edges are here; */
+  DisjointSet ds(nvec);  /* use for supernodes */
+  assert(vNodes.empty() && vEdges.empty());
+
+  /* initialize vNodes; create a node for each test pattern; 
+     idx is the same as that in vectors */
+  for (i = 0; i < nvec; ++i) {
+    vNodes.emplace_back(i);
+  }
+
+  /* build edges for two compatible nodes */
   for (i = 0; i < nvec; ++i) {
     for (j = i + 1; j < nvec; ++j) {
       if (isCompatible(vectors[i], vectors[j])) {
+        // vEdges
+
 
       }
     }
+    cerr << endl;
   }
 
 }
@@ -59,7 +76,7 @@ bool ATPG::isCompatible(const string& vec1, const string& vec2) const {
 
 
 /* static test compression */
-void ATPG::random_simulation()  
+void ATPG::random_simulation()
 {
   int detect_num = 0;
   int iter;

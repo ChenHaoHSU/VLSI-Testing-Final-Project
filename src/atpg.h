@@ -338,17 +338,21 @@ private:
   };
 
   // For compatibility graph (static compression)
-  struct Node {
-    Node() {}
-
-    int idx; // idx in vectors; a node represents a vector in vectors.
-  };
-
-  struct Edge {
+  class Edge {
+  public:
     Edge() {}
+    Edge(const int i, const pair<int, int> p): edge_idx(i), node_pair(p) {}
 
-    
-
+    int             edge_idx; // idx in vEdges;
+    pair<int, int>  node_pair;
   };
 
+  class Node {
+  public:
+    Node() {}
+    Node(const int i): node_idx(i) {}
+
+    int             node_idx; // idx in vectors and also in vNodes; a node represents a vector in vectors.
+    map<int, int>   mNeighbors; // node_idx -> edge_idx
+  };
 };
