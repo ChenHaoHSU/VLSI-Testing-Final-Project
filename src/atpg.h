@@ -134,6 +134,7 @@ private:
   typedef unique_ptr<WIRE>  wptr_s;    /* using smart pointer to hold/maintain the instances of WIRE */
   typedef unique_ptr<NODE>  nptr_s;    /* using smart pointer to hold/maintain the instances of NODE */
   typedef unique_ptr<FAULT> fptr_s;    /* using smart pointer to hold/maintain the instances of FAULT */
+  typedef forward_list<wptr> LIFO;     /* using forward list as a decision tree */
 
   /* orginally declared in miscell.h */
   forward_list<fptr_s> flist;          /* fault list */
@@ -266,6 +267,13 @@ private:
   void random_pattern_generation(const bool use_unknown = false);
   
   int backtrack_limit_v1;
+
+  /* defined in tdfmedop.cpp */
+  int tdf_medop_x(void);
+  int tdf_medop_v2(const fptr, int&, LIFO&, string&);
+  int tdf_medop_v1(const fptr, int&);
+  wptr find_objective(const fptr, wptr&, int&);
+  wptr find_cool_pi(const wptr, int&);
 
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */
