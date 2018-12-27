@@ -114,8 +114,96 @@ ATPG::fptr ATPG::select_primary_fault()
 /* select a secondary fault for podem_x */
 ATPG::fptr ATPG::select_secondary_fault()
 {
-  fptr fault_selected = flist_undetect.front();
+  /* configurations */
+  bool PODEM_X = true;
+  enum DYNAMIC_TYPE { RANDOM, DETECTED_TIME, SCOAP };
+  DYNAMIC_TYPE dtype = RANDOM;
+  
+  /* if wfmap is not constructed, construct it first */
+  std::pair<fptr, fptr> empty_fpair;
+  if (wfmap.empty()) {
+    for (fptr f: flist_undetect) {
+      if (f->io == GO) {
+          if (!wfmap.count(std::pair<nptr, short>(f->node, -1)))
+            wfmap[std::pair<nptr, short>(f->node, -1)] = empty_fpair;
+          if (f->fault_type == STUCK0) wfmap[std::pair<nptr, short>(f->node, -1)].first = f;
+          else wfmap[std::pair<nptr, short>(f->node, -1)].second = f;
+      }
+      else {
+          if (!wfmap.count(std::pair<nptr, short>(f->node, f->index)))
+            wfmap[std::pair<nptr, short>(f->node, f->index)] = empty_fpair;
+          if (f->fault_type == STUCK0) wfmap[std::pair<nptr, short>(f->node, f->index)].first = f;
+          else wfmap[std::pair<nptr, short>(f->node, f->index)].second = f;
+      }
+    }
+  }
+  
+  /* check if there is any PI = U. if not, return nullptr */
+  bool have_u = false;
+  for (int i = 0; i < cktin.size(); ++i) {
+    if (cktin[i]->value == U) {
+      have_u = true;
+      break;
+    }
+  }
+  if (!have_u) return nullptr;
+  
+  /* [PODEM-X] check if there is any PO = U. if not, return nullptr */
+  if (PODEM_X) {
+    have_u = false;
+    for (int i = 0; i < cktout.size(); ++i) {
+      if (cktout[i]->value == U) {
+        have_u = true;
+        break;
+      }
+    }
+    if (!have_u) return nullptr;
+  }
+  
+  /* select possible faults */
+  std::vector<fptr> secondary_fault_list;
+  for (fptr f: flist_undetect) {
+    wptr w = sort_wlist[f->to_swlist];
+    if (f->fault_type == STUCK0) {
+      if (w->value == U && (w->value_v1 == U || w->value_v1 == 0)) {
+        secondary_fault_list.push_back(f);
+      }
+    }
+    else {
+      if (w->value == U && (w->value_v1 == U || w->value_v1 == 1)) {
+        secondary_fault_list.push_back(f);
+      }
+    }
+  }
+  
+  /* select a prefered fault */
+  switch (dtype) {
+    RANDOM:
+      std::random_shuffle(secondary_fault_list.begin(), secondary_fault_list.end());
+      break;
+    DETECTED_TIME:
+      std::sort(secondary_fault_list.begin(), secondary_fault_list.end(),
+                [&](const fptr& a, const fptr& b) {
+                    return (a->detected_time < b->detected_time);
+                });
+      break;
+    SCOAP:
+      std::sort(secondary_fault_list.begin(), secondary_fault_list.end(),
+                [&](const fptr& a, const fptr& b) {
+                    const wptr wa = sort_wlist[a->to_swlist], wb = sort_wlist[b->to_swlist];
+                    double cca = (a->fault_type == STUCK0) ? wa->cc1 : wa->cc0;
+                    double ccb = (b->fault_type == STUCK0) ? wb->cc1 : wb->cc0;
+                    double coa = (a->io == GO) ? wa->co.back() : wa->co[a->index];
+                    double cob = (b->io == GO) ? wb->co.back() : wb->co[b->index];
+                    return ((cca * coa) > (ccb * cob));
+                });
+      break;
+    default:
+      break;
+  }
 
+  if (secondary_fault_list.empty()) return nullptr;
+  fptr fault_selected = secondary_fault_list.front();
   return fault_selected;
 }
   

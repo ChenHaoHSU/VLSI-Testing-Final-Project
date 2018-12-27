@@ -25,6 +25,8 @@
 #include <numeric>
 #include <list>
 #include <string>
+#include <map>
+#include <climits>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -136,6 +138,7 @@ private:
   /* orginally declared in miscell.h */
   forward_list<fptr_s> flist;          /* fault list */
   forward_list<fptr> flist_undetect;   /* undetected fault list */
+  map<std::pair<nptr, short>, std::pair<fptr, fptr> > wfmap;    /* wire -> fault query, key = nptr + index (-1 = GO) */
 
   /* orginally declared in global.h */
   vector<wptr> sort_wlist;             /* sorted wire list with regard to level */
