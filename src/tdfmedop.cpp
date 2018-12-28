@@ -18,25 +18,22 @@ int ATPG::tdf_medop_x()
     int aborted_fnum = 0;
     int redundant_fnum = 0;
     int call_num = 0;
-    
+
     fptr fault_under_test = select_primary_fault();
-    
+
     int if_find_v1, if_find_v2;
     LIFO d_tree_v1, d_tree_v2;
     string vec_v1, vec_v2;
     /* generate test pattern */
     while (fault_under_test != nullptr) {
-        cerr << "test fault " << fault_under_test->node->name << endl;
         vec_v2.resize(cktin.size()+1, 'x');
         int if_find_v2 = tdf_medop_v2(fault_under_test, current_backtrack_num, d_tree_v2, vec_v2);
         switch (if_find_v2) {
             case TRUE:
-                cerr << "checkpoint" << endl;
                 /* TODO: find v1 */
                 vectors.emplace_back(vec_v2);
                 tdfsim_a_vector(vec_v2, current_detect_num);
                 total_detect_num += current_detect_num;
-                                cerr << "checkpoint2" << endl;
                 break;
             case FALSE:
                 fault_under_test->detect = REDUNDANT;
@@ -47,15 +44,15 @@ int ATPG::tdf_medop_x()
                 break;
         }
         /* TODO: test v1 */
-                        cerr << "checkpoint 3" << endl;
         fault_under_test->test_tried = true;
         fault_under_test = nullptr;
         fault_under_test = select_primary_fault();
+        d_tree_v1.clear();
+        d_tree_v2.clear();
         total_backtrack_num += current_backtrack_num; // accumulate number of backtracks
         call_num++;
-                        cerr << "checkpoint4" << endl;
     }
-    
+
     fprintf(stdout,"\n");
     fprintf(stdout,"#number of aborted faults = %d\n",aborted_fnum);
     fprintf(stdout,"\n");
@@ -74,7 +71,6 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     wptr wpi, faulty_w;
     int obj_value;
     wptr obj_wire;
-                    cerr << "v2 checkpoint" << endl;
     /* initialize some shit */
     for (int i = 0; i < sort_wlist.size(); i++) {
         sort_wlist[i]->value = U;
@@ -99,7 +95,6 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
         }
     }
     sim();
-                        cerr << "v2 checkpoint 1" << endl;
     current_backtrack_num = 0;
     find_test = false;
     no_test = false;
@@ -108,7 +103,6 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
 
     /* This is actually "mark fanout cone". */
     mark_propagate_tree(fault->node);
-                        cerr << "v2 checkpoint 2" << endl;
     /* set initial objective and assign one PI */
     int if_initial_objective_reached = set_uniquely_implied_value(fault);
     switch (if_initial_objective_reached) {
@@ -128,31 +122,26 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
             no_test = true;
             break;
         /* FALSE: need more assignments */
-        case FALSE: 
+        case FALSE:
             break;
     }
-                    cerr << "v2 checkpoint 3" << endl;
     while ((current_backtrack_num < backtrack_limit) && (!no_test) && (!find_test)) {
         /* check if test is possible. first find objective. */
         bool try_obj = find_objective(fault, obj_wire, obj_value);
-                            cerr << "v2 checkpoint 5" << endl;
         if (try_obj) {
             wpi = find_cool_pi(obj_wire, obj_value);
         } else {
             wpi = nullptr;
         }
-                                    cerr << "v2 checkpoint 6" << endl;
         /* finally we get a PI to assign */
         if (wpi != nullptr) {
-                                                cerr << "v2 checkpoint 6.1" << endl;
             wpi->value = obj_value;
             wpi->flag |= CHANGED;
             d_tree.push_front(wpi);
-            
+
         }
         /* no PI can be assigned. we should backtrack. */
         else {
-                                                            cerr << "v2 checkpoint 6.2" << endl;
             while (!d_tree.empty() && (wpi == nullptr)) {
                 wptr current_w = d_tree.front();
                 /* pop */
@@ -168,20 +157,16 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
                     current_w->flag |= CHANGED;
                     current_w->flag |= ALL_ASSIGNED;
                     current_backtrack_num++;
-                    wpi = current_w; 
+                    wpi = current_w;
                 }
             }
-                                                            cerr << "v2 checkpoint 7" << endl;
             /* decision tree empty -> no test possible */
             if (wpi == nullptr) {
                 no_test = true;
             }
         }
-                                                            cerr << "v2 checkpoint 8" << endl;
         if (wpi != nullptr) {
-            cerr << "v2 checkpoint 9.09" << endl;
             sim();
-            cerr << "v2 checkpoint 9" << endl;
             if (faulty_w = fault_evaluate(fault)) {
                 forward_imply(faulty_w);
             }
@@ -200,9 +185,7 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
                 ///* test v1 */
                 LIFO d_tree_v1;
                 string vec_v1 = extract_vector_v2();
-                                cerr << "segfaultqws" << endl;
                 int if_find_v1 = tdf_medop_v1(fault, current_backtrack_num, d_tree_v1, vec_v1);
-                cerr << "segfault" << endl;
                 //
                 //if (if_find_v1 == TRUE) {
                 //    assignments = vec_v1;
@@ -222,14 +205,12 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
             }
         }
     } // while (three conditions)
-                        cerr << "v2 checkpoint 4" << endl;
     /* clear everthing */
     //for (wptr wptr_ele: d_tree) {
     //    wptr_ele->flag &= ~ALL_ASSIGNED;
     //}
     /* This is actually "unmark fanout cone". */
     unmark_propagate_tree(fault->node);
-                    cerr << "segfault 2" << endl;
     if (find_test) {
         for (int i = 0; i < ncktin; i++) {
             int vec_index = (i == 0) ? ncktin : (i-1);
@@ -287,7 +268,7 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     int ncktin = cktin.size();
     int desired_value = fault->fault_type;
     wptr faulty_w = sort_wlist[fault->to_swlist];
-    
+
     /* reset */
     for (int i = 0; i < ncktin; ++i) {
         cktin[i]->flag &= ~MARKED;
@@ -377,7 +358,7 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
             else {
                 current_w->flag |= MARKED;
             }
-        
+
             partial_sim(fanin_cone_wlist);
             if (faulty_w->value == desired_value) {
                 find_test = TRUE;
@@ -394,13 +375,13 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
             }
         }
     }
-    
+
     for (int i = 0; i < ncktin; ++i) {
         cktin[i]->flag &= ~MARKED;
         cktin[i]->flag &= ~CHANGED;
         cktin[i]->flag &= ~ALL_ASSIGNED;
     }
-    
+
     if (find_test) {
         for (int i = 0; i < ncktin; ++i) {
             switch (cktin[i]->value) {
@@ -452,7 +433,7 @@ bool ATPG::find_objective(const fptr fault, wptr& obj_wire, int& obj_value)
     /* if the fault is not on PO */
     if (fault->node->type != OUTPUT) {
 
-        /* if the faulty gate output is not U, it should be D or D' */ 
+        /* if the faulty gate output is not U, it should be D or D' */
         if (fault->node->owire.front()->value ^ U) {
             if (!((fault->node->owire.front()->value == B) || (fault->node->owire.front()->value == D))) {
                 return false;
@@ -461,7 +442,7 @@ bool ATPG::find_objective(const fptr fault, wptr& obj_wire, int& obj_value)
             if (!(n = find_propagate_gate(fault->node->owire.front()->level))) {
                 return false;
             }
-            /* determine objective level according to the type of n. */ 
+            /* determine objective level according to the type of n. */
             switch(n->type) {
                 case  AND:
                 case  NOR:
@@ -487,7 +468,7 @@ bool ATPG::find_objective(const fptr fault, wptr& obj_wire, int& obj_value)
                 obj_value = (fault->fault_type) ? 0 : 1;
                 obj_wire = fault->node->owire.front();
             }
-            /* if fault is a GI fault */ 
+            /* if fault is a GI fault */
             else {
                 /* if faulted input is not U */
                 if (fault->node->iwire[fault->index]->value ^ U) {
@@ -516,7 +497,7 @@ bool ATPG::find_objective(const fptr fault, wptr& obj_wire, int& obj_value)
     else {
         /* if faulty PO is still unknown */
         if (fault->node->iwire.front()->value == U) {
-            /*objective level is opposite to the stuck fault */ 
+            /*objective level is opposite to the stuck fault */
             obj_value = (fault->fault_type) ? 0 : 1;
             obj_wire = fault->node->iwire.front();
         } else {
@@ -529,12 +510,12 @@ bool ATPG::find_objective(const fptr fault, wptr& obj_wire, int& obj_value)
 ATPG::wptr ATPG::find_cool_pi(const wptr obj_wire, int& obj_value)
 {
     wptr new_obj_wire;
-    
+
     /* if PI, assign the same value as objective */
     if (obj_wire->flag & INPUT) {
         return obj_wire;
     }
-    
+
     /* if not PI, backtrace to PI */
     else {
         switch(obj_wire->inode.front()->type) {
@@ -553,7 +534,7 @@ ATPG::wptr ATPG::find_cool_pi(const wptr obj_wire, int& obj_value)
                 new_obj_wire = obj_wire->inode.front()->iwire.front();
                 break;
         }
-    
+
         switch (obj_wire->inode.front()->type) {
             case  NOT:
             case  NOR:
