@@ -139,7 +139,7 @@ private:
   /* orginally declared in miscell.h */
   forward_list<fptr_s> flist;          /* fault list */
   forward_list<fptr> flist_undetect;   /* undetected fault list */
-  string extract_vector_v2();
+
   map<std::pair<nptr, short>, std::pair<fptr, fptr> > wfmap;    /* wire -> fault query, key = nptr + index (-1 = GO) */
 
   /* orginally declared in global.h */
@@ -271,11 +271,22 @@ private:
 
   /* defined in tdfmedop.cpp */
   int tdf_medop_x(void);
-  int tdf_medop_v2(const fptr, int&, LIFO&, string&);
+  int tdf_medop_v2(const fptr, int&, LIFO&, string&, string&, const bool, const bool);
   int tdf_medop_v1(const fptr, int&, LIFO&, string&);
   bool find_objective(const fptr, wptr&, int&);
   wptr find_cool_pi(const wptr, int&);
   void mark_fanin_cone(const wptr, vector<wptr>&);
+  
+  /* defined in tdfutil.cpp */
+  void initialize_fault_primary_record();
+  void initialize_all_assigned_flag();
+  string extract_all_assigned_flag();
+  void restore_all_assigned_flag(const string);
+  void initialize_vector();
+  string extract_vector_v1();
+  void restore_vector_v1(const string);
+  string extract_vector_v2();
+  void restore_vector_v2(const string);
 
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */
@@ -345,6 +356,10 @@ private:
     int to_swlist;             /* index to the sort_wlist[] */ 
     int fault_no;              /* fault index */
     int detected_time;
+    
+    LIFO   primary_d_tree;
+    string primary_allassigned;
+    string primary_vector;
   };
 
   // For compatibility graph (static compression)

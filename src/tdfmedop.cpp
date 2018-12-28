@@ -10,7 +10,6 @@
 
 int ATPG::tdf_medop_x()
 {
-    string vec;
     int current_detect_num = 0;
     int total_detect_num = 0;
     int total_backtrack_num = 0;
@@ -18,37 +17,81 @@ int ATPG::tdf_medop_x()
     int aborted_fnum = 0;
     int redundant_fnum = 0;
     int call_num = 0;
+    
+    /* initialize fault primary members */
+    initialize_fault_primary_record();
 
-    fptr fault_under_test = select_primary_fault();
+    LIFO d_tree;
+    string vec, flag;
 
-    int if_find_v1, if_find_v2;
-    LIFO d_tree_v1, d_tree_v2;
-    string vec_v1, vec_v2;
     /* generate test pattern */
+    fptr fault_under_test = select_primary_fault();
     while (fault_under_test != nullptr) {
-        vec_v2.resize(cktin.size()+1, 'x');
-        int if_find_v2 = tdf_medop_v2(fault_under_test, current_backtrack_num, d_tree_v2, vec_v2);
-        switch (if_find_v2) {
-            case TRUE:
-                /* TODO: find v1 */
-                vectors.emplace_back(vec_v2);
-                tdfsim_a_vector(vec_v2, current_detect_num);
-                total_detect_num += current_detect_num;
-                break;
-            case FALSE:
-                fault_under_test->detect = REDUNDANT;
-                redundant_fnum++;
-                break;
-            case MAYBE:
-                aborted_fnum++;
-                break;
+        cerr << "primary fault: fault no." << fault_under_test->fault_no << endl;
+        /* test loop for this primary fault */
+        bool is_test_generated = false;
+        bool please_find_v2 = true;
+        bool is_rollback = false; // The first time to v2 or once rejected from v1
+        
+        vec.resize(cktin.size()+1, 'x');
+        flag.resize(cktin.size(), '0');
+        
+        int debug_counter = 0; // feel free to delete it
+        while (!is_test_generated && (debug_counter < 1000)) {
+            if (please_find_v2) {
+                int find_v2 = tdf_medop_v2(fault_under_test, current_backtrack_num, d_tree, vec, flag,
+                                              true /*primary*/, is_rollback);
+                if (find_v2 == TRUE) {
+                    if (!is_rollback)
+                        cerr << "v2 found...";
+                    please_find_v2 = false;
+                } else {
+                    cerr << "v2 failed" << endl;
+                    break;
+                }
+            }
+            else {
+                LIFO tmp_d_tree = d_tree;
+                string tmp_vec = vec;
+                int find_v1 = tdf_medop_v1(fault_under_test, current_backtrack_num, tmp_d_tree, tmp_vec);
+                if (find_v1 == TRUE) {
+                    vectors.emplace_back(tmp_vec);
+                    is_test_generated = true;
+                    cerr << " v1 found! vector: " << tmp_vec << endl;
+                } else {
+                    please_find_v2 = true;
+                    is_rollback = true;
+                }
+            }
+            debug_counter++;
         }
+
+        if (!is_test_generated) {
+            cerr << " (" << debug_counter << ") ... ";
+            cerr << "v1 failed finally!" << endl;
+            }
+        d_tree.clear();
+        //switch (if_find_v2) {
+        //    case TRUE:
+        //        /* TODO: find v1 */
+        //        vectors.emplace_back(vec_v2);
+        //        tdfsim_a_vector(vec_v2, current_detect_num);
+        //        total_detect_num += current_detect_num;
+        //        break;
+        //    case FALSE:
+        //        fault_under_test->detect = REDUNDANT;
+        //        redundant_fnum++;
+        //        break;
+        //    case MAYBE:
+        //        aborted_fnum++;
+        //        break;
+        //}
         /* TODO: test v1 */
+        if (is_test_generated) {
+            tdfsim_a_vector(vectors.back(), current_detect_num);
+        }
         fault_under_test->test_tried = true;
-        fault_under_test = nullptr;
         fault_under_test = select_primary_fault();
-        d_tree_v1.clear();
-        d_tree_v2.clear();
         total_backtrack_num += current_backtrack_num; // accumulate number of backtracks
         call_num++;
     }
@@ -64,83 +107,84 @@ int ATPG::tdf_medop_x()
     return 0;
 }
 
-int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tree, string& assignments)
+int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tree, string& assignments,
+                       string& flags, const bool is_primary, const bool is_rollback)
 {
-    /* declare some shit */
+    /* is_primary : if this fault is a primary fault? */
+    /* is_rollback : if this fault failed to find v1 and is rollbacked? */
+    
+    /* 1. primary and not rollback: we would restore from fault. */
+    /* 2. primary and rollback: we would success from the last argument */
+    /* 3. secondary and not rollback: we need empty d_tree, flag and success vector */
+    /* 4. secondary and rollback: we would success from the last argument
+    
+    
+    /* declare some parameters */
     int ncktin = cktin.size();
     wptr wpi, faulty_w;
     int obj_value;
     wptr obj_wire;
-    /* initialize some shit */
-    for (int i = 0; i < sort_wlist.size(); i++) {
-        sort_wlist[i]->value = U;
+    
+    /* initialize the circuit */
+    /* load d_tree, vector, and ALL_ASSIGN flag */
+    if (is_primary && (!is_rollback)) {
+        d_tree      = fault->primary_d_tree;
+        assignments = fault->primary_vector;
+        flags       = fault->primary_allassigned;
     }
-    for (int i = 0; i < ncktin; i++) {
-        int vec_index = (i == 0) ? ncktin : (i-1);
-        switch(assignments[vec_index]) {
-            case '0':
-                cktin[i]->value = 0;
-                cktin[i]->flag |= CHANGED;
-                break;
-            case '1':
-                cktin[i]->value = 1;
-                cktin[i]->flag |= CHANGED;
-                break;
-            case 'x':
-                cktin[i]->value = U;
-                cktin[i]->flag |= CHANGED;
-                break;
-            default:
-                assert(0);
-        }
-    }
-    sim();
-    current_backtrack_num = 0;
+    restore_vector_v2(assignments);
+    restore_all_assigned_flag(flags);
+    mark_propagate_tree(fault->node);
+    
+    /* initial state */
     find_test = false;
     no_test = false;
-    assignments.clear();
-    assignments.resize(ncktin + 1, 'x');
+    current_backtrack_num = 0; // This should be tuned later !!!
 
-    /* This is actually "mark fanout cone". */
-    mark_propagate_tree(fault->node);
-    /* set initial objective and assign one PI */
-    int if_initial_objective_reached = set_uniquely_implied_value(fault);
-    switch (if_initial_objective_reached) {
-        /* TRUE: v2 test possible */
-        case TRUE:
-            sim();
-            faulty_w = fault_evaluate(fault);
-            if (faulty_w != nullptr) {
-                forward_imply(faulty_w);
-            }
-            if (check_test()) {
-                find_test = true;
-            }
-            break;
-        /* CONFLICT: fault untestable */
-        case CONFLICT:
-            no_test = true;
-            break;
-        /* FALSE: need more assignments */
-        case FALSE:
-            break;
+    /* If this fault is not rollback */
+    /* we should set initial objective */ 
+    if (!is_rollback) {
+        /* set initial objective and assign one PI */
+        int if_initial_objective_reached = set_uniquely_implied_value(fault);
+        switch (if_initial_objective_reached) {
+            /* TRUE: v2 test possible */
+            case TRUE:
+                sim();
+                faulty_w = fault_evaluate(fault);
+                if (faulty_w != nullptr) {
+                    forward_imply(faulty_w);
+                }
+                if (check_test()) {
+                    find_test = true;
+                }
+                break;
+            /* CONFLICT: fault untestable */
+            case CONFLICT:
+                no_test = true;
+                break;
+            /* FALSE: need more assignments */
+            case FALSE:
+                break;
+        }
     }
+    
+    bool rollback_trigger = (is_rollback) ? true : false;
+    
     while ((current_backtrack_num < backtrack_limit) && (!no_test) && (!find_test)) {
-        /* check if test is possible. first find objective. */
+        /* Check if test is possible. First find objective. */
         bool try_obj = find_objective(fault, obj_wire, obj_value);
-        if (try_obj) {
-            wpi = find_cool_pi(obj_wire, obj_value);
-        } else {
+        wpi = (try_obj) ? find_cool_pi(obj_wire, obj_value) : nullptr;
+        if (rollback_trigger) {
+            rollback_trigger = false;
             wpi = nullptr;
         }
-        /* finally we get a PI to assign */
+        /* Finally we get a PI to assign. We should assign it and push it into d_tree. */
         if (wpi != nullptr) {
             wpi->value = obj_value;
             wpi->flag |= CHANGED;
             d_tree.push_front(wpi);
-
         }
-        /* no PI can be assigned. we should backtrack. */
+        /* Finally no PI can be assigned. We should backtrack acccording to d_tree. */
         else {
             while (!d_tree.empty() && (wpi == nullptr)) {
                 wptr current_w = d_tree.front();
@@ -160,74 +204,39 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
                     wpi = current_w;
                 }
             }
-            /* decision tree empty -> no test possible */
+            /* d_tree empty -> no test possible */
             if (wpi == nullptr) {
                 no_test = true;
             }
         }
+        /* Here we get a newly assigned PI. */
+        /* Now we should verify if this could generate a test. */
+        /* If a test is generated, find_test is true and we could leave this while-loop. */
         if (wpi != nullptr) {
             sim();
             if (faulty_w = fault_evaluate(fault)) {
                 forward_imply(faulty_w);
             }
             if (check_test()) {
-                /* test for v1 */
-                /* save record for recovery */
-                vector<bool> tmp_assigned_record;
-                for (wptr wptr_ele: d_tree) {
-                    if (wptr_ele->flag & ALL_ASSIGNED) {
-                        tmp_assigned_record.push_back(true);
-                    } else {
-                        tmp_assigned_record.push_back(false);
-                    }
-                    wptr_ele->flag &= ~ALL_ASSIGNED;
-                }
-                ///* test v1 */
-                LIFO d_tree_v1;
-                string vec_v1 = extract_vector_v2();
-                int if_find_v1 = tdf_medop_v1(fault, current_backtrack_num, d_tree_v1, vec_v1);
-                //
-                //if (if_find_v1 == TRUE) {
-                //    assignments = vec_v1;
-                    find_test = true;
-                //} else {
-                //    int j = 0;
-                //    for (wptr wptr_ele: d_tree) {
-                //        if (tmp_assigned_record[j]) {
-                //            wptr_ele->flag |= ALL_ASSIGNED;
-                //        } else {
-                //            wptr_ele->flag &= ~ALL_ASSIGNED;
-                //        }
-                //        j++;
-                //    }
-                //    find_test = false;
-                //}
+                find_test = true;
             }
         }
     } // while (three conditions)
-    /* clear everthing */
-    //for (wptr wptr_ele: d_tree) {
-    //    wptr_ele->flag &= ~ALL_ASSIGNED;
-    //}
-    /* This is actually "unmark fanout cone". */
+        
+    /* Before exiting tdf_medop_v2, some information should be updated. */
+    if (is_primary && find_test) {
+        fault->primary_d_tree = d_tree;
+        fault->primary_allassigned = extract_all_assigned_flag();
+        fault->primary_vector = extract_vector_v2();
+    }
+    
+    /* Before exiting tdf_medop_v2, some information should be cleared */
+    initialize_all_assigned_flag();
     unmark_propagate_tree(fault->node);
+
     if (find_test) {
-        for (int i = 0; i < ncktin; i++) {
-            int vec_index = (i == 0) ? ncktin : (i-1);
-            switch (cktin[i]->value) {
-                case 0:
-                case B:
-                    assignments[vec_index] = '0';
-                    break;
-                case 1:
-                case D:
-                    assignments[vec_index] = '1';
-                    break;
-                case U:
-                    assignments[vec_index] = 'x';
-                    break;
-            }
-        }
+        assignments = extract_vector_v2();
+        initialize_vector();
         return TRUE;
     }
     else if (no_test) {
@@ -238,30 +247,6 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     }
 }
 
-string ATPG::extract_vector_v2()
-{
-    int ncktin = cktin.size();
-    string vec_v2;
-    vec_v2.resize(ncktin + 1, 'x');;
-    for (int i = 0; i < ncktin; i++) {
-        int vec_index = (i == 0) ? ncktin : (i-1);
-        switch (cktin[i]->value) {
-            case 0:
-            case B:
-                vec_v2[vec_index] = '0';
-                break;
-            case 1:
-            case D:
-                vec_v2[vec_index] = '1';
-                break;
-            case U:
-                vec_v2[vec_index] = 'x';
-                break;
-        }
-    }
-    return vec_v2;
-}
-
 int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tree, string& assignments)
 {
     /* declare some shit */
@@ -269,36 +254,8 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     int desired_value = fault->fault_type;
     wptr faulty_w = sort_wlist[fault->to_swlist];
 
-    /* reset */
-    for (int i = 0; i < ncktin; ++i) {
-        cktin[i]->flag &= ~MARKED;
-        cktin[i]->flag &= ~CHANGED;
-        cktin[i]->flag &= ~ALL_ASSIGNED;
-    }
-
     /* initialize some shit */
-    for (int i = 0; i < sort_wlist.size(); i++) {
-        sort_wlist[i]->value = U;
-    }
-    for (int i = 0; i < ncktin; i++) {
-        switch(assignments[i]) {
-            case '0':
-                cktin[i]->value = 0;
-                cktin[i]->flag |= CHANGED;
-                break;
-            case '1':
-                cktin[i]->value = 1;
-                cktin[i]->flag |= CHANGED;
-                break;
-            case 'x':
-                cktin[i]->value = U;
-                cktin[i]->flag |= CHANGED;
-                break;
-            default:
-                assert(0);
-        }
-    }
-    sim();
+    restore_vector_v1(assignments);
 
     /* get the fanin cone stuff */
     vector<wptr> fanin_cone_wlist;
@@ -325,7 +282,7 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     }
 
     int find_test = FALSE;
-    int current_backtrack_num = 0;
+    current_backtrack_num = 0;
     wptr wpi;
 
     int tmp_desired_value = desired_value;
@@ -376,6 +333,8 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
         }
     }
 
+    /* initialize ALL_ASSIGNED flag */
+    /* unmark fanin cone */
     for (int i = 0; i < ncktin; ++i) {
         cktin[i]->flag &= ~MARKED;
         cktin[i]->flag &= ~CHANGED;
@@ -383,28 +342,7 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     }
 
     if (find_test) {
-        for (int i = 0; i < ncktin; ++i) {
-            switch (cktin[i]->value) {
-                case 0:
-                case B:
-                    if (assignments[i] != 'x') {
-                        assert(assignments[i] == '0');
-                    }
-                    assignments[i] = '0';
-                    break;
-                case 1:
-                case D:
-                    if (assignments[i] != 'x') {
-                        assert(assignments[i] == '1');
-                    }
-                    assignments[i] = '1';
-                    break;
-                case U:
-                    assert(assignments[i] == 'x');
-                    assignments[i] = 'x';
-                    break;
-            }
-        }
+        assignments = extract_vector_v1();
         return TRUE;
     } else if (no_test) {
         return FALSE;
