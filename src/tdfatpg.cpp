@@ -9,29 +9,16 @@
 
 #include "atpg.h"
 
-#define RANDOM_PATTERN_NUM           10
+#define RANDOM_PATTERN_NUM  10000
 
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
 
-  // calculate_cc();
-  // calculate_co();
-  // tdf_podem_x();
+  calculate_cc();
+  calculate_co();
+  tdf_podem_x();
 
   // random_pattern_generation(true);
-
-  vectors.clear();
-  vectors.emplace_back("0xx10x");
-  vectors.emplace_back("0xx1xx");
-  vectors.emplace_back("0x01xx");
-  vectors.emplace_back("01xx0x");
-  vectors.emplace_back("x0xx0x");
-  vectors.emplace_back("1xxxxx");
-  vectors.emplace_back("x1x00x");
-  vectors.emplace_back("11xx0x");
-  for (auto& s : vectors) {
-    cerr << s << endl;
-  }
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   static_compression();
@@ -306,7 +293,8 @@ again:  if (wpi) {
             case D: 
               cktin[i]->value = 1; break;
             case U: 
-              cktin[i]->value = rand()&01; break;
+              // cktin[i]->value = rand()&01; 
+              break;
           }
           switch (cktin[i]->value_v1) {
             case 0:
@@ -316,7 +304,8 @@ again:  if (wpi) {
             case D: 
               cktin[i]->value_v1 = 1; break;
             case U: 
-              cktin[i]->value_v1 = rand()&01; break;
+              // cktin[i]->value_v1 = rand()&01; 
+              break;
           }
         }
         /* form the generated pattern and push back to vectors */
@@ -605,7 +594,7 @@ void ATPG::random_pattern_generation(const bool use_unknown) {
   string vec2(cktin.size() + 1, '0');
   for (int i = 0; i < RANDOM_PATTERN_NUM; ++i) {
     for (int j = 0; j < cktin.size() + 1; ++j) {
-      if (use_unknown && (rand() % 2)) {
+      if (use_unknown && (rand() % 10 < 9)) {
         vec1[j] = 'x';
         vec2[j] = 'x';
       }

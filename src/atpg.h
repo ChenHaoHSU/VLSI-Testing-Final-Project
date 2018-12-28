@@ -6,7 +6,7 @@
 /*           last update : 01/21/2018                                 */
 /**********************************************************************/
 
-// #define NDEBUG
+#define NDEBUG
 
 #include <cassert>
 #include <climits>
@@ -25,6 +25,7 @@
 #include <numeric>
 #include <list>
 #include <string>
+#include <set>
 #include <map>
 #include <climits>
 #include <unordered_set>
@@ -270,7 +271,7 @@ private:
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */
   void compatibility_graph();
-  void fill_x();
+  void random_fill_x();
   bool isCompatible(const string& vec1, const string& vec2) const;
   void random_simulation();
 
