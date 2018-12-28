@@ -9,7 +9,7 @@
 #include "atpg.h"
 #include "disjointSet.h"
 
-#define RANDOM_SIMULATION_ITER_NUM  5
+#define RANDOM_SIMULATION_ITER_NUM  15
 
 void ATPG::static_compression() {
   random_simulation();
@@ -36,7 +36,7 @@ void ATPG::compatibility_graph() {
   /* build edges for two compatible nodes */
   int nEdges = 0;
   for (int i = 0; i < nvec; ++i) {
-    for (int j = i + 1; j < min(nvec, i + 1000); ++j) {
+    for (int j = i + 1; j < min(nvec, i + 200); ++j) {
       if (isCompatible(vectors[i], vectors[j])) {
         vEdges.emplace_back(nEdges, i, j);
         vNodes[i].mNeighbors[j] = nEdges;
