@@ -34,7 +34,7 @@ public:
 
   // Find set
   int find(const int u) const {
-    return (u == parent[u] ? u : find(parent[u]));
+    return (u == parent[u] ? u : parent[u] = find(parent[u]));
   }
 
   // Union by rank

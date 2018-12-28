@@ -12,9 +12,9 @@
 #define RANDOM_SIMULATION_ITER_NUM  5
 
 void ATPG::static_compression() {
-  // compatibility_graph();
-  fill_x();
-  random_simulation();
+  compatibility_graph();
+  // fill_x();
+  // random_simulation();
 }
 
 void ATPG::fill_x() {
@@ -32,10 +32,10 @@ void ATPG::fill_x() {
 
 void ATPG::compatibility_graph() {
 
-  // typedef __gnu_pbds::priority_queue<Edge*, , __gnu_pbds::thin_heap_tag> PQueue;
+  typedef __gnu_pbds::priority_queue<Edge, Edge_Cmp, __gnu_pbds::thin_heap_tag>          PQueue;
+  typedef PQueue::point_iterator PQueue_Iter;
 
-  int i, j, nvec;
-  nvec = vectors.size();
+  int nvec = vectors.size();
 
   vector<Node> vNodes(0); /* all nodes are here; vNodes.size() == vectors.size() */
   vector<Edge> vEdges(0); /* all edges are here; */
@@ -44,21 +44,115 @@ void ATPG::compatibility_graph() {
 
   /* initialize vNodes; create a node for each test pattern; 
      idx is the same as that in vectors */
-  for (i = 0; i < nvec; ++i) {
+  for (int i = 0; i < nvec; ++i) {
     vNodes.emplace_back(i);
   }
 
   /* build edges for two compatible nodes */
-  for (i = 0; i < nvec; ++i) {
-    for (j = i + 1; j < nvec; ++j) {
+  int nEdges = 0;
+  for (int i = 0; i < nvec; ++i) {
+    for (int j = i + 1; j < nvec; ++j) {
       if (isCompatible(vectors[i], vectors[j])) {
-        // vEdges
-
-
+        vEdges.emplace_back(nEdges, i, j);
+        vNodes[i].mNeighbors[j] = nEdges;
+        vNodes[j].mNeighbors[i] = nEdges;
+        ++nEdges;
       }
     }
-    cerr << endl;
   }
+
+/*
+  for (int i = 0, n = vNodes.size(); i < n; ++i) {
+    fprintf(stderr, "[%d]\n", i);
+    for (auto& p : vNodes[i].mNeighbors) {
+      fprintf(stderr, "n%d => e%d (n%d, n%d)\n", p.first, p.second, 
+              vEdges[p.second].node_pair.first, vEdges[p.second].node_pair.second);
+    }
+    fprintf(stderr, "\n");
+  }
+*/
+
+  auto cal_common_neighbor_set = [&] (const Edge& e, set<int>& s) -> void {
+    const map<int, int>& mLarger = vNodes[e.n1].mNeighbors.size() > vNodes[e.n2].mNeighbors.size() ? 
+                                   vNodes[e.n1].mNeighbors : vNodes[e.n2].mNeighbors;
+    const map<int, int>& mSmaller = vNodes[e.n1].mNeighbors.size() > vNodes[e.n2].mNeighbors.size() ? 
+                                    vNodes[e.n2].mNeighbors : vNodes[fe.n1].mNeighbors;
+    s.clear();
+    for (const auto& p : mSmaller)
+      if (mLarger.count(p.first) > 0)
+        s.insert(p.first)
+  };
+
+  auto cal_common_neighbor_num = [&] (Edge& e) -> int {
+    const map<int, int>& mLarger = vNodes[e.n1].mNeighbors.size() > vNodes[e.n2].mNeighbors.size() ? 
+                                   vNodes[e.n1].mNeighbors : vNodes[e.n2].mNeighbors;
+    const map<int, int>& mSmaller = vNodes[e.n1].mNeighbors.size() > vNodes[e.n2].mNeighbors.size() ? 
+                                    vNodes[e.n2].mNeighbors : vNodes[fe.n1].mNeighbors;
+    int ret = 0;
+    for (const auto& p : mSmaller)
+      if (mLarger.count(p.first) > 0)
+        ++ret;
+    e.nCommon = ret;
+    return ret;
+  };
+
+  for (int i = 0, n = vEdges.size(); i < n; ++i) {
+    fprintf(stderr, "e%d (n%d, n%d): %d\n", i, vEdges[i].n1, vEdges[i].n2, cal_common_neighbor_num(vEdges[i]));
+  }
+
+  PQueue pq;
+
+  vector<PQueue_Iter> vIterators(vEdges.size());
+  for (int i = 0, n = vEdges.size(); i < n; ++i) {
+    cal_common_neighbor_num(vEdges[i]);
+    vIterators[i] = pq.push(vEdges[i]);
+  }
+
+  while (!pq.empty()) {
+    /* find the edge with largest set of common neighbors */
+    Edge& top_edge = vEdges[pq.top().edge_idx];
+    pq.pop();
+    const int n1 = top_edge.n1;
+    const int n2 = top_edge.n2;
+    Node& node1 = vNodes[n1];
+    Node& node2 = vNodes[n2];
+
+    /* set of common neighbors of n1 and n2 */ 
+    set<int> sCommonNeighbors;
+    cal_common_neighbor_set(top_edge, sCommonNeighbors);
+
+    /* s <- i union j */
+    const int del_n = node1.mNeighbors.size() > node2.mNeighbors.size() ? node2 : node1;
+    Node& new_node = node1.mNeighbors.size() > node2.mNeighbors.size() ? node1 : node2;
+
+    /* update common-neighbor edges */
+    for (const int common_n : sCommonNeighbors) {
+      Node& common_node = vNodes[common_n];
+      assert(common_node.mNeighbors.count(n1) > 0);
+      assert(common_node.mNeighbors.count(n2) > 0);
+      common_node.mNeighbors.erase(del_n);
+      pq.modify()
+
+    }
+
+
+    /* remove non-common-neighbor edges*/
+    for (const auto& p : node1.mNeighbors) {
+      if (sCommonNeighbors.count(p.first) == 0) {
+        vNodes[p.first].mNeighbors.erase(n1);
+        pq.erase(vIterators[p.second]);
+      }
+    }
+    for (const auto& p : node2.mNeighbors) {
+      if (sCommonNeighbors.count(p.first) == 0) {
+        vNodes[p.first].mNeighbors.erase(n2);
+        pq.erase(vIterators[p.second]);
+      }
+    }
+  }
+
+
+
 
 }
 

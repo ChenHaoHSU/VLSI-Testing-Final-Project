@@ -341,10 +341,12 @@ private:
   class Edge {
   public:
     Edge() {}
-    Edge(const int i, const pair<int, int> p): edge_idx(i), node_pair(p) {}
+    Edge(const int i, const int n1_, const int n2_): edge_idx(i), n1(n1_), n2(n2_) {}
 
-    int             edge_idx; // idx in vEdges;
-    pair<int, int>  node_pair;
+    int  edge_idx; // idx in vEdges;
+    int  n1; // idx in vNodes
+    int  n2; // idx in vNodes
+    int  nCommon; // number of common neighbors (excluding each other)
   };
 
   class Node {
@@ -355,4 +357,11 @@ private:
     int             node_idx; // idx in vectors and also in vNodes; a node represents a vector in vectors.
     map<int, int>   mNeighbors; // node_idx -> edge_idx
   };
+
+  struct Edge_Cmp {
+    bool operator() (const Edge& e1, const Edge& e2) {
+      return e1.nCommon < e2.nCommon;
+    }
+  };
+
 };

@@ -20,18 +20,18 @@ void ATPG::transition_delay_fault_atpg(void) {
 
   // random_pattern_generation(true);
 
-  // vectors.clear();
-  // vectors.emplace_back("0xx10x");
-  // vectors.emplace_back("0xx1xx");
-  // vectors.emplace_back("0x01xx");
-  // vectors.emplace_back("01xx0x");
-  // vectors.emplace_back("x0xx0x");
-  // vectors.emplace_back("1xxxxx");
-  // vectors.emplace_back("x1x00x");
-  // vectors.emplace_back("11xx0x");
-  // for (auto& s : vectors) {
-  //   cerr << s << endl;
-  // }
+  vectors.clear();
+  vectors.emplace_back("0xx10x");
+  vectors.emplace_back("0xx1xx");
+  vectors.emplace_back("0x01xx");
+  vectors.emplace_back("01xx0x");
+  vectors.emplace_back("x0xx0x");
+  vectors.emplace_back("1xxxxx");
+  vectors.emplace_back("x1x00x");
+  vectors.emplace_back("11xx0x");
+  for (auto& s : vectors) {
+    cerr << s << endl;
+  }
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   static_compression();
