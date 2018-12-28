@@ -19,7 +19,8 @@ void ATPG::transition_delay_fault_atpg(void) {
   calculate_cc();
   calculate_co();
   
-  tdf_podem_x();
+  //tdf_podem_x();
+  tdf_medop_x();
 
   // random_pattern_generation(true);
   // compatibility_graph();
@@ -110,11 +111,10 @@ ATPG::fptr ATPG::select_primary_fault()
   for (fptr fptr_ele: flist_undetect) {
     if (!fptr_ele->test_tried) {
       fault_selected = fptr_ele;
-      break;
+      return fault_selected;
     }
   }
-
-  return fault_selected;
+  return nullptr;
 }
 
 /* select a secondary fault for podem_x */
