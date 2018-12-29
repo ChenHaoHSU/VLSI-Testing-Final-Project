@@ -1,6 +1,9 @@
 #!/bin/bash
 
 EVAL=./eval/golden_tdfsim
+# EVAL=./eval/golden_tdfsim_faults
+# EVAL=./eval/atpg
+
 CIR_PATH=./sample_circuits
 PAT_PATH=./tdf_patterns
 
