@@ -27,73 +27,93 @@ int ATPG::tdf_medop_x()
     /* generate test pattern */
     fptr fault_under_test = select_primary_fault();
     while (fault_under_test != nullptr) {
-        print_fault_description(fault_under_test);
+        // print_fault_description(fault_under_test);
         /* test loop for this primary fault */
         bool is_test_generated = false;
         bool please_find_v2 = true;
-        bool is_rollback = false; // The first time to v2 or once rejected from v1
+        bool is_rollback = false;
         
         vec.resize(cktin.size()+1, '2');
         flag.resize(cktin.size(), '0');
         
-
         int debug_counter = 0; // feel free to delete it
         while (!is_test_generated && (debug_counter < 1000)) {
             if (please_find_v2) {
                 int find_v2 = tdf_medop_v2(fault_under_test, current_backtrack_num, d_tree, vec, flag,
-                                              true /*primary*/, is_rollback);
+                                           true, is_rollback);
                 if (find_v2 == TRUE) {
-                    //cerr << "[medop process] v2 found (" << vec << ")" << endl;
                     please_find_v2 = false;
                 } else {
-                    //cerr << "v2 failed" << endl;
                     break;
                 }
             }
             else {
                 LIFO tmp_d_tree;
                 string tmp_vec = vec;
-                //cerr << "[medop process] vector fed to v1 (" << tmp_vec << ")" << endl;
                 int find_v1 = tdf_medop_v1(fault_under_test, current_backtrack_num, tmp_d_tree, tmp_vec);
                 if (find_v1 == TRUE) {
                     vectors.emplace_back(tmp_vec);
                     is_test_generated = true;
-                    cerr << "[medop process] v1 found (" << tmp_vec << ")" << endl << endl;
+                    vec = tmp_vec;
                     tested_counter++;
                 } else {
                     please_find_v2 = true;
                     is_rollback = true;
-                    //cerr << "[medop process] v1 not found -> rollback" << endl;
                 }
             }
             debug_counter++;
         }
 
-        //if (!is_test_generated) {
-        //    cerr << " (" << debug_counter << ") ... ";
-        //    cerr << "v1 failed finally!" << endl;
-        //}
         d_tree.clear();
-        //switch (if_find_v2) {
-        //    case TRUE:
-        //        /* TODO: find v1 */
-        //        vectors.emplace_back(vec_v2);
-        //        tdfsim_a_vector(vec_v2, current_detect_num);
-        //        total_detect_num += current_detect_num;
-        //        break;
-        //    case FALSE:
-        //        fault_under_test->detect = REDUNDANT;
-        //        redundant_fnum++;
-        //        break;
-        //    case MAYBE:
-        //        aborted_fnum++;
-        //        break;
-        //}
-        /* TODO: test v1 */
+
         flist_undetect.remove(fault_under_test);
         //if (is_test_generated) {
         //    tdfsim_a_vector(vectors.back(), current_detect_num);
         //}
+        /* secondary fault */
+        fptr secondary_fault_under_test;
+        int secondary_count = 0;
+        do {
+            secondary_count++;
+            is_test_generated = false;
+            please_find_v2 = true;
+            is_rollback = false;
+            secondary_fault_under_test = select_secondary_fault();
+            
+            d_tree.clear();
+            flag.resize(cktin.size(), '0');
+            
+
+            if (secondary_fault_under_test != nullptr) {
+                debug_counter = 0; // feel free to delete it
+                while (!is_test_generated && (debug_counter < 100)) {
+                    if (please_find_v2) {
+                        int find_v2 = tdf_medop_v2(secondary_fault_under_test, current_backtrack_num, d_tree, vec, flag,
+                                                   false, is_rollback);
+                        if (find_v2 == TRUE) {
+                            please_find_v2 = false;
+                        } else {
+                            break;
+                        }
+                    }
+                    else {
+                        LIFO tmp_d_tree;
+                        string tmp_vec = vec;
+                        int find_v1 = tdf_medop_v1(secondary_fault_under_test, current_backtrack_num, tmp_d_tree, tmp_vec);
+                        if (find_v1 == TRUE) {
+                            vectors.emplace_back(tmp_vec);
+                            is_test_generated = true;
+                            tested_counter++;
+                        } else {
+                            please_find_v2 = true;
+                            is_rollback = true;
+                        }
+                    }
+                    debug_counter++;
+                }
+            }
+        } while ((secondary_fault_under_test != nullptr) && (secondary_count < 20));
+        
         fault_under_test->test_tried = true;
         fault_under_test = select_primary_fault();
         total_backtrack_num += current_backtrack_num; // accumulate number of backtracks
@@ -163,19 +183,11 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
                 break;
         }
     }
-    //cerr << "after the first pos" << endl;
-    //print_PI_assignments();
-    
-    bool rollback_trigger = (is_rollback) ? true : false;
     
     while ((current_backtrack_num < backtrack_limit) && (!no_test) && (!find_test)) {
         /* Check if test is possible. First find objective. */
         bool try_obj = find_objective(fault, obj_wire, obj_value);
         wpi = (try_obj) ? find_cool_pi(obj_wire, obj_value) : nullptr;
-        //if (rollback_trigger) {
-        //    rollback_trigger = false;
-        //    wpi = nullptr;
-        //}
         /* Finally we get a PI to assign. We should assign it and push it into d_tree. */
         if (wpi != nullptr) {
             wpi->value = obj_value;
@@ -237,8 +249,6 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     unmark_propagate_tree(fault->node);
 
     if (find_test) {
-        //cerr << "in v2 find test" << endl;
-        //print_PI_assignments();
         assignments = extract_vector_v2(assignments);
         initialize_vector();
         return TRUE;
@@ -283,13 +293,6 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
             }
         return;
     };
-    
-    //if (fault->fault_no == 4) {
-    //    cerr << "fanin cone list: " << endl;
-    //    for (int i = 0; i < fanin_cone_wlist.size(); ++i) {
-    //        cerr << fanin_cone_wlist[i] -> name << endl;
-    //    }
-    //}
 
     /* sim */
     partial_sim(fanin_cone_wlist);
@@ -304,11 +307,6 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
         wpi = find_cool_pi(faulty_w, obj_value);
         /* Finally we get a PI to assign. We should assign it and push it into d_tree. */
         if (wpi != nullptr) {
-            //if (fault->fault_no == 4) {
-            //    cerr << "in v1 wpi is not null" << endl;
-            //    cerr << "set " << wpi->name << " to " << obj_value << endl;
-            //    print_PI_assignments();
-            //}
             wpi->value = obj_value;
             wpi->flag |= CHANGED;
             d_tree.push_front(wpi);
@@ -346,11 +344,6 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
             if (faulty_w->value == desired_value) {
                 find_test = true;
             }
-                //if (fault->fault_no == 4) {
-                //    cerr << "in v1 wpi aaa" << endl;
-                //    cerr << "set " << wpi->name << " to " << tmp_desired_value << endl;
-                //    print_PI_assignments();
-                //}
         }
     } // while (three conditions)
 
