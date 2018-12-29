@@ -285,9 +285,9 @@ private:
   string extract_all_assigned_flag();
   void restore_all_assigned_flag(const string);
   void initialize_vector();
-  string extract_vector_v1();
+  string extract_vector_v1(const string);
   void restore_vector_v1(const string);
-  string extract_vector_v2();
+  string extract_vector_v2(const string);
   void restore_vector_v2(const string);
 
   /* defined in stc.cpp */

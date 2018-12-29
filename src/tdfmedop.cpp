@@ -23,7 +23,7 @@ int ATPG::tdf_medop_x()
 
     LIFO d_tree;
     string vec, flag;
-
+        int tested_counter = 0;
     /* generate test pattern */
     fptr fault_under_test = select_primary_fault();
     while (fault_under_test != nullptr) {
@@ -33,9 +33,10 @@ int ATPG::tdf_medop_x()
         bool please_find_v2 = true;
         bool is_rollback = false; // The first time to v2 or once rejected from v1
         
-        vec.resize(cktin.size()+1, 'x');
+        vec.resize(cktin.size()+1, '2');
         flag.resize(cktin.size(), '0');
         
+
         int debug_counter = 0; // feel free to delete it
         while (!is_test_generated && (debug_counter < 1000)) {
             if (please_find_v2) {
@@ -58,6 +59,7 @@ int ATPG::tdf_medop_x()
                     vectors.emplace_back(tmp_vec);
                     is_test_generated = true;
                     cerr << "[medop process] v1 found (" << tmp_vec << ")" << endl << endl;
+                    tested_counter++;
                 } else {
                     please_find_v2 = true;
                     is_rollback = true;
@@ -98,6 +100,7 @@ int ATPG::tdf_medop_x()
         call_num++;
     }
 
+    cerr << "TESTED: " << tested_counter << endl;
     fprintf(stdout,"\n");
     fprintf(stdout,"#number of aborted faults = %d\n",aborted_fnum);
     fprintf(stdout,"\n");
@@ -222,7 +225,7 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     if (is_primary && find_test) {
         fault->primary_d_tree = d_tree;
         fault->primary_allassigned = extract_all_assigned_flag();
-        fault->primary_vector = extract_vector_v2();
+        fault->primary_vector = extract_vector_v2(assignments);
     }
     
     if (find_test) {
@@ -236,7 +239,7 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     if (find_test) {
         //cerr << "in v2 find test" << endl;
         //print_PI_assignments();
-        assignments = extract_vector_v2();
+        assignments = extract_vector_v2(assignments);
         initialize_vector();
         return TRUE;
     }
@@ -359,7 +362,7 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     }
 
     if (find_test) {
-        assignments = extract_vector_v1();
+        assignments = extract_vector_v1(assignments);
         return TRUE;
     } else if (no_test) {
         return FALSE;

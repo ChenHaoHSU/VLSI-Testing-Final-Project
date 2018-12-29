@@ -29,7 +29,7 @@ void ATPG::initialize_fault_primary_record()
     LIFO empty_tree;
     string empty_flag, empty_vector;
     empty_flag.resize(ncktin, '0');
-    empty_vector.resize(ncktin + 1, 'x');
+    empty_vector.resize(ncktin + 1, '2');
     for (fptr fptr_ele: flist_undetect) {
         fptr_ele->primary_d_tree = empty_tree;
         fptr_ele->primary_allassigned = empty_flag;
@@ -87,11 +87,12 @@ void ATPG::initialize_vector()
 
 /* extract_vector_v1 */
 /* extract a string from the circuit as v1 pattern */
-string ATPG::extract_vector_v1()
+string ATPG::extract_vector_v1(const string vec_v2)
 {
     int ncktin = cktin.size();
     string vec_v1;
-    vec_v1.resize(ncktin + 1, 'x');
+    vec_v1.resize(ncktin + 1, '2');
+    vec_v1[ncktin] = vec_v2[ncktin];
     for (int i = 0; i < ncktin; ++i) {
         switch (cktin[i]->value) {
             case 0:
@@ -103,7 +104,7 @@ string ATPG::extract_vector_v1()
                 vec_v1[i] = '1';
                 break;
             case U:
-                vec_v1[i] = 'x';
+                vec_v1[i] = '2';
                 break;
         }
     }
@@ -126,7 +127,7 @@ void ATPG::restore_vector_v1(const string vec_v1)
                 cktin[i]->value = 1;
                 cktin[i]->flag |= CHANGED;
                 break;
-            case 'x':
+            case '2':
                 cktin[i]->value = U;
                 cktin[i]->flag |= CHANGED;
                 break;
@@ -139,11 +140,12 @@ void ATPG::restore_vector_v1(const string vec_v1)
 
 /* extract_vector_v2 */
 /* extract a string from the circuit as v2 pattern */
-string ATPG::extract_vector_v2()
+string ATPG::extract_vector_v2(const string accumulated)
 {
     int ncktin = cktin.size();
     string vec_v2;
-    vec_v2.resize(ncktin + 1, 'x');
+    vec_v2.resize(ncktin + 1, '2');
+    vec_v2[ncktin-1] = accumulated[ncktin-1];
     for (int i = 0; i < ncktin; i++) {
         int vec_index = (i == 0) ? ncktin : (i-1);
         switch (cktin[i]->value) {
@@ -156,7 +158,7 @@ string ATPG::extract_vector_v2()
                 vec_v2[vec_index] = '1';
                 break;
             case U:
-                vec_v2[vec_index] = 'x';
+                vec_v2[vec_index] = '2';
                 break;
         }
     }
@@ -180,7 +182,7 @@ void ATPG::restore_vector_v2(const string vec_v2)
                 cktin[i]->value = 1;
                 cktin[i]->flag |= CHANGED;
                 break;
-            case 'x':
+            case '2':
                 cktin[i]->value = U;
                 cktin[i]->flag |= CHANGED;
                 break;
