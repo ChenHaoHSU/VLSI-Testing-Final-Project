@@ -275,8 +275,8 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
       [&](const fptr fptr_ele){
         if (fptr_ele->detect == TRUE) {
           fptr_ele->detected_time += 1;
+          num_of_current_detect += fptr_ele->eqv_fault_num;
           if (fptr_ele->detected_time >= detection_num) {
-            num_of_current_detect += fptr_ele->eqv_fault_num;
             return true;
           }
           else {

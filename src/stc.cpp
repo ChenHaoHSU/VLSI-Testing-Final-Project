@@ -90,7 +90,6 @@ void ATPG::compatibility_graph() {
     /* find the edge with largest set of common neighbors */
     Edge& top_edge = vEdges[pq.top().edge_idx];
     pq.pop();
-    const int top_e = top_edge.edge_idx;
     const int n1 = top_edge.n1;
     const int n2 = top_edge.n2;
     Node& node1 = vNodes[n1];
