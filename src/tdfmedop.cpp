@@ -18,109 +18,132 @@ int ATPG::tdf_medop_x()
     int redundant_fnum = 0;
     int call_num = 0;
     
+    /* tune parameters !!! */
+    int v2_loop_limit = 1000;
+    int secondary_limit = 100;
+    
+    /* declare parameters */
+    LIFO   d_tree;           // decision tree. must be clear in each outmost loop.
+    string d_tree_flag;      // string of PI "ALL_ASSIGNED" flag. for recording decision tree state.
+    string tdf_vec;          // tdf vector. must be clear in each outmost loop.
+    fptr   primary_fault;    // primary fault
+    fptr   secondary_fault;  // secondary fault
+    
+    bool   test_found;       // test found (for both v2, v1)
+    bool   next_is_v2;       // test v2 in next loop
+    bool   v1_not_found;     // failed to test v1 under a previous v2
+    bool   is_primary;       // indicate if the fault is primary
+    
+    int    v2_loop_counter;
+    int    secondary_counter;
+    
     /* initialize fault primary members */
     initialize_fault_primary_record();
-
-    LIFO d_tree;
-    string vec, flag;
-        int tested_counter = 0;
-    /* generate test pattern */
-    fptr fault_under_test = select_primary_fault();
-    while (fault_under_test != nullptr) {
-        // print_fault_description(fault_under_test);
-        /* test loop for this primary fault */
-        bool is_test_generated = false;
-        bool please_find_v2 = true;
-        bool is_rollback = false;
+    
+    /* select primary fault */
+    primary_fault = select_primary_fault();
+    
+    while (primary_fault != nullptr) {
+        print_fault_description(primary_fault);
+        /* test this primary fault */
+        /* initialize the controlling boolean parameters */
+        test_found = false;
+        next_is_v2 = true;
+        v1_not_found = false;
+        is_primary = true;
+        v2_loop_counter = 0;
         
-        vec.resize(cktin.size()+1, '2');
-        flag.resize(cktin.size(), '0');
+        /* initialize tdf_vec and d_tree_flag for primary fault */
+        tdf_vec.resize(cktin.size()+1, '2');
+        d_tree_flag.resize(cktin.size(), '0');
         
-        int debug_counter = 0; // feel free to delete it
-        while (!is_test_generated && (debug_counter < 1000)) {
-            if (please_find_v2) {
-                int find_v2 = tdf_medop_v2(fault_under_test, current_backtrack_num, d_tree, vec, flag,
-                                           true, is_rollback);
+        /* main loop for finding primary fault v2-v1 pattern */
+        while (!test_found && (v2_loop_counter < v2_loop_limit)) {
+            /* find v2 */
+            if (next_is_v2) {
+                int find_v2 = tdf_medop_v2(primary_fault, current_backtrack_num, d_tree, tdf_vec, d_tree_flag, is_primary, v1_not_found);
                 if (find_v2 == TRUE) {
-                    please_find_v2 = false;
-                } else {
-                    break;
-                }
+                    next_is_v2 = false;
+                    v2_loop_counter++;
+                } else { break; }
             }
+            /* find v1 */
             else {
-                LIFO tmp_d_tree;
-                string tmp_vec = vec;
-                int find_v1 = tdf_medop_v1(fault_under_test, current_backtrack_num, tmp_d_tree, tmp_vec);
+                LIFO tmp_d_tree;          // new empty tree. the old tree must not be cleared since we may not find v1
+                string tmp_vec = tdf_vec; // success v2 vector
+                int find_v1 = tdf_medop_v1(primary_fault, current_backtrack_num, tmp_d_tree, tmp_vec);
                 if (find_v1 == TRUE) {
-                    vectors.emplace_back(tmp_vec);
-                    is_test_generated = true;
-                    vec = tmp_vec;
-                    tested_counter++;
+                    tdf_vec = tmp_vec;
+                    vectors.emplace_back(tdf_vec);
+                    test_found = true;
                 } else {
-                    please_find_v2 = true;
-                    is_rollback = true;
+                    next_is_v2 = true;
+                    v1_not_found = true;
                 }
             }
-            debug_counter++;
         }
-
-        d_tree.clear();
-
-        flist_undetect.remove(fault_under_test);
-        //if (is_test_generated) {
+        
+        /* remove detected fault */
+        flist_undetect.remove(primary_fault);
+        //if (test_found) {
         //    tdfsim_a_vector(vectors.back(), current_detect_num);
         //}
+        
         /* secondary fault */
-        fptr secondary_fault_under_test;
-        int secondary_count = 0;
+        secondary_counter = 0;
         do {
-            secondary_count++;
-            is_test_generated = false;
-            please_find_v2 = true;
-            is_rollback = false;
-            secondary_fault_under_test = select_secondary_fault();
+            /* select secondary fault */
+            secondary_fault = select_secondary_fault();
+            secondary_counter++;
             
+            /* initialize the controlling boolean parameters */
+            test_found = false;
+            next_is_v2 = true;
+            v1_not_found = false;
+            is_primary = false;
+            v2_loop_counter = 0;
+            
+            /* initialize d_tree and d_tree_flag for secondary fault */
+            /* success tdf_vec from primary */
             d_tree.clear();
-            flag.resize(cktin.size(), '0');
+            d_tree_flag.resize(cktin.size(), '0');
             
-
-            if (secondary_fault_under_test != nullptr) {
-                debug_counter = 0; // feel free to delete it
-                while (!is_test_generated && (debug_counter < 100)) {
-                    if (please_find_v2) {
-                        int find_v2 = tdf_medop_v2(secondary_fault_under_test, current_backtrack_num, d_tree, vec, flag,
-                                                   false, is_rollback);
+            /* main loop for finding secondary fault v2-v1 pattern */
+            if (secondary_fault != nullptr) {
+                while (!test_found  && (v2_loop_counter < v2_loop_limit)) {
+                    /* find v2 */
+                    if (next_is_v2) {
+                        int find_v2 = tdf_medop_v2(secondary_fault, current_backtrack_num, d_tree, tdf_vec, d_tree_flag, is_primary, v1_not_found);
                         if (find_v2 == TRUE) {
-                            please_find_v2 = false;
-                        } else {
-                            break;
-                        }
+                            next_is_v2 = false;
+                            v2_loop_counter++;
+                        } else { break; }
                     }
+                    /* find v1 */
                     else {
                         LIFO tmp_d_tree;
-                        string tmp_vec = vec;
-                        int find_v1 = tdf_medop_v1(secondary_fault_under_test, current_backtrack_num, tmp_d_tree, tmp_vec);
+                        string tmp_vec = tdf_vec;
+                        int find_v1 = tdf_medop_v1(secondary_fault, current_backtrack_num, tmp_d_tree, tmp_vec);
                         if (find_v1 == TRUE) {
-                            vectors.emplace_back(tmp_vec);
-                            is_test_generated = true;
-                            tested_counter++;
+                            tdf_vec = tmp_vec;
+                            vectors.emplace_back(tdf_vec);
+                            test_found = true;
                         } else {
-                            please_find_v2 = true;
-                            is_rollback = true;
+                            next_is_v2 = true;
+                            v1_not_found = true;
                         }
                     }
-                    debug_counter++;
                 }
             }
-        } while ((secondary_fault_under_test != nullptr) && (secondary_count < 20));
+        } while ((secondary_fault != nullptr) && (secondary_counter < secondary_limit));
         
-        fault_under_test->test_tried = true;
-        fault_under_test = select_primary_fault();
+        /* drop and select next primary fault */
+        primary_fault->test_tried = true;
+        primary_fault = select_primary_fault();
         total_backtrack_num += current_backtrack_num; // accumulate number of backtracks
         call_num++;
-    }
+    } // while-loop for primary fault
 
-    cerr << "TESTED: " << tested_counter << endl;
     fprintf(stdout,"\n");
     fprintf(stdout,"#number of aborted faults = %d\n",aborted_fnum);
     fprintf(stdout,"\n");
