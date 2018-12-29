@@ -226,7 +226,7 @@ void ATPG::random_fill_x() {
   for (string& vec : vectors) {
     assert(vec.size() == len);
     for (i = 0; i < len; ++i) {
-      if (vec[i] == 'x') {
+      if (vec[i] == '2' || vec[i] == 'x') {
         vec[i] = (rand() & 01) ? '1' : '0';
       }
     }
