@@ -89,9 +89,9 @@ int ATPG::tdf_medop_x()
         //}
         /* TODO: test v1 */
         flist_undetect.remove(fault_under_test);
-        if (is_test_generated) {
-            //tdfsim_a_vector(vectors.back(), current_detect_num);
-        }
+        //if (is_test_generated) {
+        //    tdfsim_a_vector(vectors.back(), current_detect_num);
+        //}
         fault_under_test->test_tried = true;
         fault_under_test = select_primary_fault();
         total_backtrack_num += current_backtrack_num; // accumulate number of backtracks
@@ -223,6 +223,9 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
         fault->primary_d_tree = d_tree;
         fault->primary_allassigned = extract_all_assigned_flag();
         fault->primary_vector = extract_vector_v2();
+    }
+    
+    if (find_test) {
         flags = extract_all_assigned_flag();
     }
     
@@ -234,7 +237,6 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
         //cerr << "in v2 find test" << endl;
         //print_PI_assignments();
         assignments = extract_vector_v2();
-
         initialize_vector();
         return TRUE;
     }
