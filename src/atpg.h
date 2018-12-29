@@ -278,6 +278,8 @@ private:
   void mark_fanin_cone(const wptr, vector<wptr>&);
   
   /* defined in tdfutil.cpp */
+  void print_PI_assignments();
+  void print_fault_description(fptr);
   void initialize_fault_primary_record();
   void initialize_all_assigned_flag();
   string extract_all_assigned_flag();

@@ -1,5 +1,27 @@
 #include "atpg.h"
+void ATPG::print_PI_assignments()
+{
+    int ncktin = cktin.size();
+    cerr << "=========================" << endl;
+    for (int i = 0; i < ncktin; ++i) {
+        cerr << cktin[i]->name << " = " << cktin[i]->value << endl;
+    }
+    cerr << "=========================" << endl;
+}
 
+void ATPG::print_fault_description(fptr fault)
+{
+    string type = (fault->fault_type == STR) ? "STR" : "STF";
+    string node = fault->node->name;
+    string io   = (fault->io == GI) ? "GI" : "GO";
+    string wire = sort_wlist[fault->to_swlist]->name;
+    cerr << "=========================" << endl;
+    cerr << "=   fault information   =" << endl;
+    cerr << "=-----------------------=" << endl;
+    cerr << "= [No. " << fault->fault_no << "] node " << node << endl;
+    cerr << "= " << io << " " << type << " at " << wire << endl;
+    cerr << "=========================" << endl << endl;
+}
 
 void ATPG::initialize_fault_primary_record()
 {
