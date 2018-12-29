@@ -1,6 +1,6 @@
 /**********************************************************************/
-/*           Transition Delay Fault ATPG:                             */
-/*           generating the test pattern list,                        */
+/*           Transition Delay Fault ATPG;                             */
+/*           building the pattern list;                               */
 /*           calculating the total fault coverage.                    */
 /*                                                                    */
 /*           Author: Hsiang-Ting Wen, Fu-Yu Chuang, and Chen-Hao Hsu  */
@@ -16,9 +16,13 @@ void ATPG::transition_delay_fault_atpg(void) {
 
   calculate_cc();
   calculate_co();
-  tdf_podem_x();
+
+  //tdf_podem_x();
+  tdf_medop_x();
 
   // random_pattern_generation(true);
+  // compatibility_graph();
+  // fill_x();
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   static_compression();
@@ -26,6 +30,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   display_test_patterns();
   // display_undetect();
+
 }
 
 /* dynamic test compression by podem-x */
@@ -56,8 +61,8 @@ int ATPG::tdf_podem_x()
           tdfsim_a_vector(vec, current_detect_num);
           total_detect_num += current_detect_num;
         }
-        /* If we want mutiple petterns per fault, 
-         * NO fault simulation.  drop ONLY the fault under test */ 
+        /* If we want mutiple petterns per fault,
+         * NO fault simulation.  drop ONLY the fault under test */
         else {
           // fault_under_test->detect = TRUE;
           /* drop fault_under_test */
@@ -70,7 +75,7 @@ int ATPG::tdf_podem_x()
           fault_under_test->detect = REDUNDANT;
           no_of_redundant_faults++;
           break;
-    
+
       case MAYBE:
           no_of_aborted_faults++;
           break;
@@ -100,9 +105,14 @@ int ATPG::tdf_podem_x()
 /* select a primary fault for podem */
 ATPG::fptr ATPG::select_primary_fault()
 {
-  fptr fault_selected = flist_undetect.front();
-
-  return fault_selected;
+  fptr fault_selected;
+  for (fptr fptr_ele: flist_undetect) {
+    if (!fptr_ele->test_tried) {
+      fault_selected = fptr_ele;
+      return fault_selected;
+    }
+  }
+  return nullptr;
 }
 
 /* select a secondary fault for podem_x */
@@ -112,7 +122,7 @@ ATPG::fptr ATPG::select_secondary_fault()
   bool PODEM_X = true;
   enum DYNAMIC_TYPE { RANDOM, DETECTED_TIME, SCOAP };
   DYNAMIC_TYPE dtype = RANDOM;
-  
+
   /* if wfmap is not constructed, construct it first */
   std::pair<fptr, fptr> empty_fpair;
   if (wfmap.empty()) {
@@ -131,7 +141,7 @@ ATPG::fptr ATPG::select_secondary_fault()
       }
     }
   }
-  
+
   /* check if there is any PI = U. if not, return nullptr */
   bool have_u = false;
   for (int i = 0; i < cktin.size(); ++i) {
@@ -141,7 +151,7 @@ ATPG::fptr ATPG::select_secondary_fault()
     }
   }
   if (!have_u) return nullptr;
-  
+
   /* [PODEM-X] check if there is any PO = U. if not, return nullptr */
   if (PODEM_X) {
     have_u = false;
@@ -153,7 +163,7 @@ ATPG::fptr ATPG::select_secondary_fault()
     }
     if (!have_u) return nullptr;
   }
-  
+
   /* select possible faults */
   std::vector<fptr> secondary_fault_list;
   for (fptr f: flist_undetect) {
@@ -169,7 +179,7 @@ ATPG::fptr ATPG::select_secondary_fault()
       }
     }
   }
-  
+
   /* select a prefered fault */
   switch (dtype) {
     RANDOM:
@@ -200,9 +210,9 @@ ATPG::fptr ATPG::select_secondary_fault()
   fptr fault_selected = secondary_fault_list.front();
   return fault_selected;
 }
-  
+
 /* generate test vector 2, considering fault/LOS constraints */
-int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks) 
+int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
 {
   int i,ncktwire,ncktin;
   wptr wpi; // points to the PI currently being assigned
@@ -220,13 +230,13 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
   no_of_backtracks = 0;
   find_test = false;
   no_test = false;
-  
+
   mark_propagate_tree(fault->node);
 
   /* Fig 7 starts here */
   /* set the initial goal, assign the first PI.  Fig 7.P1 */
   switch (set_uniquely_implied_value(fault)) {
-    case TRUE: // if a  PI is assigned 
+    case TRUE: // if a  PI is assigned
       sim();  // Fig 7.3
       wfault = fault_evaluate(fault);
       if (wfault != nullptr) forward_imply(wfault);// propagate fault effect
@@ -236,17 +246,17 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
       no_test = true; // cannot achieve initial objective, no test
       break;
     case FALSE:
-      break;  //if no PI is reached, keep on backtracing. Fig 7.A 
+      break;  //if no PI is reached, keep on backtracing. Fig 7.A
   }
 
-  /* loop in Fig 7.ABC 
-   * quit the loop when either one of the three conditions is met: 
+  /* loop in Fig 7.ABC
+   * quit the loop when either one of the three conditions is met:
    * 1. number of backtracks is equal to or larger than limit
    * 2. no_test
    * 3. already find a test pattern AND no_of_patterns meets required total_attempt_num */
   while ((no_of_backtracks < backtrack_limit) && !no_test &&
     !(find_test && (attempt_num == total_attempt_num))) {
-    
+
     /* check if test possible.   Fig. 7.1 */
     if (wpi = test_possible(fault)) {
       wpi->flag |= CHANGED;
@@ -262,7 +272,7 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
           decision_tree.front()->flag |= CHANGED; // this PI has been changed
           /* remove this PI in decision tree.  see dashed nodes in Fig 6 */
           decision_tree.pop_front();
-        }  
+        }
         /* else, flip last decision, flag ALL_ASSIGNED. Fig. 7.8 */
         else {
           decision_tree.front()->value = decision_tree.front()->value ^ 1; // flip last decision
@@ -275,7 +285,7 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
       if (wpi == nullptr) no_test = true; //decision tree empty,  Fig 7.9
     } // no test possible
 
-/* this again loop is to generate multiple patterns for a single fault 
+/* this again loop is to generate multiple patterns for a single fault
  * this part is NOT in the original PODEM paper  */
 again:  if (wpi) {
       sim();
@@ -290,10 +300,10 @@ again:  if (wpi) {
             case B:
               cktin[i]->value = 0; break;
             case 1:
-            case D: 
+            case D:
               cktin[i]->value = 1; break;
-            case U: 
-              // cktin[i]->value = rand()&01; 
+            case U:
+              // cktin[i]->value = rand()&01;
               break;
           }
           switch (cktin[i]->value_v1) {
@@ -301,10 +311,10 @@ again:  if (wpi) {
             case B:
               cktin[i]->value_v1 = 0; break;
             case 1:
-            case D: 
+            case D:
               cktin[i]->value_v1 = 1; break;
-            case U: 
-              // cktin[i]->value_v1 = rand()&01; 
+            case U:
+              // cktin[i]->value_v1 = rand()&01;
               break;
           }
         }
@@ -357,9 +367,9 @@ again:  if (wpi) {
     wptr_ele->flag &= ~ALL_ASSIGNED;
   }
   decision_tree.clear();
-  
+
   unmark_propagate_tree(fault->node);
-  
+
   if (find_test) {
     /* normally, we want one pattern per fault */
     if (total_attempt_num == 1) {
@@ -385,10 +395,10 @@ again:  if (wpi) {
     return(MAYBE);
   }
   return FALSE;
-}     
+}
 
 /* generate test vector 1, injection/activation/propagation */
-int ATPG::tdf_podem_v1(const fptr fault) 
+int ATPG::tdf_podem_v1(const fptr fault)
 {
    int i, ncktin, desired_value;
   wptr faulty_wire;
@@ -510,7 +520,7 @@ int ATPG::tdf_podem_v1(const fptr fault)
   wptr current_wire; // must be pi
 
   while (decision_level >= 0 && no_of_backtracks_v1 <= backtrack_limit_v1) {
-    // reach the last decision level 
+    // reach the last decision level
     if (decision_level >= pi_wlist.size()) {
       --decision_level;
       continue;
@@ -546,7 +556,7 @@ int ATPG::tdf_podem_v1(const fptr fault)
 */
 
 /*
-  cerr << pi_wlist.size() << " / " << cktin.size() 
+  cerr << pi_wlist.size() << " / " << cktin.size()
        << " (" << ((double)pi_wlist.size()/(double)cktin.size() * 100) << "%) " << endl;
 
   fprintf(stderr, "%s\n", (ret == TRUE ? "TRUE" : "FALSE"));
@@ -587,6 +597,7 @@ void ATPG::mark_propagate_tree(const wptr w, vector<wptr> &fanin_cone_wlist, vec
   fanin_cone_wlist.emplace_back(w);
   if ((w->flag & INPUT) && (w->value_v1 == U)) pi_wlist.emplace_back(w);
 }
+
 
 void ATPG::random_pattern_generation(const bool use_unknown) {
   unordered_set<string> sVector;
@@ -634,7 +645,7 @@ void ATPG::forward_imply_v1(const wptr w) {
 ATPG::wptr ATPG::find_pi_assignment_v1(const wptr object_wire, const int& object_level) {
   wptr new_object_wire;
   int new_object_level;
-  
+
   /* if PI, assign the same value as objective Fig 9.1, 9.2 */
   if (object_wire->flag & INPUT) {
     assert(object_wire->value_v1 == U);
@@ -681,7 +692,7 @@ ATPG::wptr ATPG::find_pi_assignment_v1(const wptr object_wire, const int& object
 /* Fig 9.4 */
 ATPG::wptr ATPG::find_hardest_control_v1(const nptr n) {
   int i;
-  
+
   /* because gate inputs are arranged in a increasing level order,
    * larger input index means harder to control */
   for (i = n->iwire.size() - 1; i >= 0; i--) {
