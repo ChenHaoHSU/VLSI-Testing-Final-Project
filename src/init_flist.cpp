@@ -13,6 +13,7 @@
    need modification */
 void ATPG::generate_fault_list(void) {
   flist.clear();
+  flist_ranked.clear();
   flist_undetect.clear();
 
   int fault_num;
@@ -35,6 +36,7 @@ void ATPG::generate_fault_list(void) {
     f->eqv_fault_num = 1;
     num_of_gate_fault += f->eqv_fault_num; // accumulate total fault count
     flist_undetect.push_front(f.get()); // initial undetected fault list contains all faults
+    flist_ranked.push_back(f.get());
     flist.push_front(move(f));  // push into the fault list
     
     /* for each gate, create a gate output slow-to-fall (STF) fault */
@@ -47,6 +49,7 @@ void ATPG::generate_fault_list(void) {
     f->eqv_fault_num = 1;
     num_of_gate_fault += f->eqv_fault_num;
     flist_undetect.push_front(f.get());
+    flist_ranked.push_back(f.get());
     flist.push_front(move(f));
 
     /*if w has multiple fanout branches */
@@ -67,6 +70,7 @@ void ATPG::generate_fault_list(void) {
         }
         num_of_gate_fault++;
         flist_undetect.push_front(f.get());
+        flist_ranked.push_back(f.get());
         flist.push_front(move(f));
         /* create STF for gate inputs  */
         f = move(fptr_s(new(nothrow) FAULT));
@@ -81,6 +85,7 @@ void ATPG::generate_fault_list(void) {
         }
         num_of_gate_fault++;
         flist_undetect.push_front(f.get());
+        flist_ranked.push_back(f.get());
         flist.push_front(move(f));
       }
     }

@@ -252,12 +252,13 @@ private:
   wptr tdf_get_faulty_wire(const fptr, int&);
   
   /* defined in tdfatpg.cpp */
-  void transition_delay_fault_atpg(void);  /* transition delay fault ATPG, test patterns stored in ATPG::vPatterns */
-  fptr select_primary_fault(void);         /* select a primary fault for podem */
-  fptr select_secondary_fault(void);       /* select a secondary fault for podem_x */
-  int tdf_podem_v1(const fptr);            /* generate test vector 1, considering fault/LOS constraints */
-  int tdf_podem_v2(const fptr, int&);      /* generate test vector 2, injection/activation/propagation */
-  int tdf_podem_x(void);                   /* dynamic test compression by podem-x */
+  void transition_delay_fault_atpg(void);   /* transition delay fault ATPG, test patterns stored in ATPG::vPatterns */
+  fptr select_primary_fault_by_order(void); /* select a primary fault by fault order */
+  fptr select_primary_fault(void);          /* select a primary fault for podem */
+  fptr select_secondary_fault(void);        /* select a secondary fault for podem_x */
+  int tdf_podem_v1(const fptr);             /* generate test vector 1, considering fault/LOS constraints */
+  int tdf_podem_v2(const fptr, int&);       /* generate test vector 2, injection/activation/propagation */
+  int tdf_podem_x(void);                    /* dynamic test compression by podem-x */
   int tdf_backtrace(const wptr, const int&);
   int tdf_set_uniquely_implied_value(const fptr fault);
   int tdf_backward_imply(const wptr current_wire, const int& desired_logic_value);
@@ -301,7 +302,18 @@ private:
   /* defined in scoap.cpp */
   void calculate_cc(void);                 /* calculate controllability */
   void calculate_co(void);                 /* calculate obervability */
+  void calculate_scoap(void);              /* calculate scoap of each fault */
+  void rank_fault_by_scoap(void);          /* rank faults by scoap */
+  void rank_fault_by_detect(void);         /* rank faults by detection score */
+  void try_pattern_gen(void);              /* iterate through each fault and try generate a pattern, 
+                                              evaluate how good the pattern is */
   void display_scoap(void);                /* display scoap */
+
+  vector<fptr> flist_ranked;               /* ranked fault list used to select faults */
+  vector<int> detection_score;             /* store the "sum of scoap of faults" detected by the pattern 
+                                              generated from a fault selection */
+  vector<int> detection_count;             /* store the "number of faults" detected by the pattern 
+                                              generated from a fault selection */
 
   /* detail declaration of WIRE, NODE, and FAULT classes */
   class WIRE {
@@ -359,6 +371,8 @@ private:
     int to_swlist;             /* index to the sort_wlist[] */ 
     int fault_no;              /* fault index */
     int detected_time;
+    int scoap;                 /* fault scoap */
+    int score;                 /* score used to rank fault selection */
     
     LIFO   primary_d_tree;
     string primary_allassigned;

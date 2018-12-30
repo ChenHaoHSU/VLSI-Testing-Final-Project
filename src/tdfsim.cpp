@@ -288,14 +288,39 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
           return false;
         }
       });
+
+    flist_ranked.erase(remove_if(
+      flist_ranked.begin(), flist_ranked.end(),
+      [&](const fptr fptr_ele){
+        if (fptr_ele->detect == TRUE) {
+          fptr_ele->detected_time += 1;
+          num_of_current_detect += fptr_ele->eqv_fault_num;
+          if (fptr_ele->detected_time >= detection_num) {
+            return true;
+          }
+          else {
+            fptr_ele->detect = FALSE;
+            return false;
+          }
+        }
+        else {
+          return false;
+        }
+      }), flist_ranked.end());
   }
   else { // do_fault_drop == false
+    int d_score = 0;
+    int d_count = 0;
     for (const fptr fptr_ele : flist_undetect) {
       if (fptr_ele->detect == TRUE) {
+        d_score += fptr_ele->scoap;
+        ++d_count;
         num_of_current_detect += fptr_ele->eqv_fault_num;
         fptr_ele->detect = FALSE;
       }
     }
+    detection_score.push_back(d_score);
+    detection_count.push_back(d_count);
   }
 }
 

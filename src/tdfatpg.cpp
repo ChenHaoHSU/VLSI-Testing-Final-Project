@@ -14,8 +14,8 @@
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
 
-  calculate_cc();
-  calculate_co();
+  rank_fault_by_scoap();
+  //rank_fault_by_detect();
 
   //tdf_podem_x();
   tdf_medop_x();
@@ -102,8 +102,7 @@ int ATPG::tdf_podem_x()
   fprintf(stdout,"#total number of backtracks = %d\n",total_no_of_backtracks);
 }
 
-/* select a primary fault for podem */
-ATPG::fptr ATPG::select_primary_fault()
+ATPG::fptr ATPG::select_primary_fault_by_order()
 {
   fptr fault_selected;
   for (fptr fptr_ele: flist_undetect) {
@@ -112,6 +111,31 @@ ATPG::fptr ATPG::select_primary_fault()
       return fault_selected;
     }
   }
+
+  return nullptr;
+}
+
+/* select a primary fault for podem */
+ATPG::fptr ATPG::select_primary_fault()
+{
+  /*
+  fptr fault_selected;
+  for (fptr fptr_ele: flist_undetect) {
+    if (!fptr_ele->test_tried) {
+      fault_selected = fptr_ele;
+      return fault_selected;
+    }
+  }
+  */
+  
+  fptr fault_selected;
+  for (fptr fptr_ele: flist_ranked) {
+    if (!fptr_ele->test_tried) {
+      fault_selected = fptr_ele;
+      return fault_selected;
+    }
+  }
+  
   return nullptr;
 }
 

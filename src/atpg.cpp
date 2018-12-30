@@ -63,4 +63,6 @@ ATPG::FAULT::FAULT() {
   this->to_swlist = 0;
   this->fault_no = 0;
   this->detected_time = 0;
+  this->scoap = 0;
+  this->score = 0;
 }
