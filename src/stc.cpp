@@ -13,7 +13,7 @@
 
 void ATPG::static_compression() {
   random_simulation();
-  compatibility_graph();
+  //compatibility_graph();
   random_fill_x();
   random_simulation();
 }

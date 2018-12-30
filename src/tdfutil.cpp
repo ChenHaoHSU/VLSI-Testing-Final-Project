@@ -193,3 +193,51 @@ void ATPG::restore_vector_v2(const string vec_v2)
     sim();
 }
 
+bool ATPG::pattern_has_enough_x(const string pattern)
+{
+    int required_x_bit = (int)ceil(log2((double)detection_num));
+    int x_bit_count = 0;
+
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        if (pattern[i] == '2') {
+            ++x_bit_count;
+        }
+    }
+
+    return (x_bit_count > required_x_bit);
+}
+
+vector<string> ATPG::expand_pattern(const string pattern)
+{
+    string p = pattern;
+    vector<string> expanded_patterns;
+    int x_bit_count = 0;
+
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        if (pattern[i] == '2') {
+            ++x_bit_count;
+        }
+    }
+
+    size_t pos = pattern.find_first_of('2');
+    if (x_bit_count <= 5 && pos != string::npos) {
+        expand_pattern_rec(expanded_patterns, p, '0', pos);
+        expand_pattern_rec(expanded_patterns, p, '1', pos);
+    } else {
+        expanded_patterns.push_back(pattern);
+    }
+
+    return expanded_patterns;
+}
+
+void ATPG::expand_pattern_rec(vector<string>& patterns, string pattern, char bit, size_t pos)
+{
+    pattern[pos] = bit;
+    pos = pattern.find_first_of('2', pos+1);
+    if (pos != string::npos) {
+        expand_pattern_rec(patterns, pattern, '0', pos);
+        expand_pattern_rec(patterns, pattern, '1', pos);
+    } else {
+        patterns.push_back(pattern);
+    }
+}

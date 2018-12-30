@@ -291,6 +291,9 @@ private:
   void restore_vector_v1(const string);
   string extract_vector_v2(const string);
   void restore_vector_v2(const string);
+  bool pattern_has_enough_x(const string);
+  vector<string> expand_pattern(const string);
+  void expand_pattern_rec(vector<string>&, string, char, size_t);
 
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */
