@@ -43,7 +43,7 @@ int ATPG::tdf_medop_x()
     /* select primary fault */
     primary_fault = select_primary_fault();
     
-    while (primary_fault != nullptr) {
+    while ((primary_fault != nullptr) && (primary_fault->score != -INT_MAX)) {  // speed up
         // print_fault_description(primary_fault);
         /* test this primary fault */
         /* initialize the controlling boolean parameters */
@@ -61,7 +61,8 @@ int ATPG::tdf_medop_x()
         while (!test_found && (v2_loop_counter < v2_loop_limit)) {
             /* find v2 */
             if (next_is_v2) {
-                int find_v2 = tdf_medop_v2(primary_fault, current_backtrack_num, d_tree, tdf_vec, d_tree_flag, is_primary, v1_not_found);
+                int find_v2 = tdf_medop_v2(primary_fault, current_backtrack_num, d_tree, tdf_vec, 
+                                           d_tree_flag, is_primary, v1_not_found);
                 if (find_v2 == TRUE) {
                     next_is_v2 = false;
                     v2_loop_counter++;
@@ -90,52 +91,53 @@ int ATPG::tdf_medop_x()
         }
         
         /* secondary fault */
-        //secondary_counter = 0;
-        //do {
-        //    /* select secondary fault */
-        //    secondary_fault = select_secondary_fault();
-        //    secondary_counter++;
-        //    
-        //    /* initialize the controlling boolean parameters */
-        //    test_found = false;
-        //    next_is_v2 = true;
-        //    v1_not_found = false;
-        //    is_primary = false;
-        //    v2_loop_counter = 0;
-        //    
-        //    /* initialize d_tree and d_tree_flag for secondary fault */
-        //    /* success tdf_vec from primary */
-        //    d_tree.clear();
-        //    d_tree_flag.resize(cktin.size(), '0');
-        //    
-        //    /* main loop for finding secondary fault v2-v1 pattern */
-        //    if (secondary_fault != nullptr) {
-        //        while (!test_found  && (v2_loop_counter < v2_loop_limit)) {
-        //            /* find v2 */
-        //            if (next_is_v2) {
-        //                int find_v2 = tdf_medop_v2(secondary_fault, current_backtrack_num, d_tree, tdf_vec, d_tree_flag, is_primary, v1_not_found);
-        //                if (find_v2 == TRUE) {
-        //                    next_is_v2 = false;
-        //                    v2_loop_counter++;
-        //                } else { break; }
-        //            }
-        //            /* find v1 */
-        //            else {
-        //                LIFO tmp_d_tree;
-        //                string tmp_vec = tdf_vec;
-        //                int find_v1 = tdf_medop_v1(secondary_fault, current_backtrack_num, tmp_d_tree, tmp_vec);
-        //                if (find_v1 == TRUE) {
-        //                    tdf_vec = tmp_vec;
-        //                    vectors.emplace_back(tdf_vec);
-        //                    test_found = true;
-        //                } else {
-        //                    next_is_v2 = true;
-        //                    v1_not_found = true;
-        //                }
-        //            }
-        //        }
-        //    }
-        //} while ((secondary_fault != nullptr) && (secondary_counter < secondary_limit));
+        secondary_counter = 0;
+        do {
+            /* select secondary fault */
+            secondary_fault = select_secondary_fault();
+            secondary_counter++;
+            
+            /* initialize the controlling boolean parameters */
+            test_found = false;
+            next_is_v2 = true;
+            v1_not_found = false;
+            is_primary = false;
+            v2_loop_counter = 0;
+            
+            /* initialize d_tree and d_tree_flag for secondary fault */
+            /* success tdf_vec from primary */
+            d_tree.clear();
+            d_tree_flag.resize(cktin.size(), '0');
+            
+            /* main loop for finding secondary fault v2-v1 pattern */
+            if (secondary_fault != nullptr) {
+                while (!test_found  && (v2_loop_counter < v2_loop_limit)) {
+                    /* find v2 */
+                    if (next_is_v2) {
+                        int find_v2 = tdf_medop_v2(secondary_fault, current_backtrack_num, d_tree, tdf_vec, 
+                                                   d_tree_flag, is_primary, v1_not_found);
+                        if (find_v2 == TRUE) {
+                            next_is_v2 = false;
+                            v2_loop_counter++;
+                        } else { break; }
+                    }
+                    /* find v1 */
+                    else {
+                        LIFO tmp_d_tree;
+                        string tmp_vec = tdf_vec;
+                        int find_v1 = tdf_medop_v1(secondary_fault, current_backtrack_num, tmp_d_tree, tmp_vec);
+                        if (find_v1 == TRUE) {
+                            tdf_vec = tmp_vec;
+                            vectors.emplace_back(tdf_vec);
+                            test_found = true;
+                        } else {
+                            next_is_v2 = true;
+                            v1_not_found = true;
+                        }
+                    }
+                }
+            }
+        } while ((secondary_fault != nullptr) && (secondary_counter < secondary_limit));
         
         /* drop and select next primary fault */
         primary_fault->test_tried = true;

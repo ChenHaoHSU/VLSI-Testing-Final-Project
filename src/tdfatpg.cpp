@@ -14,8 +14,8 @@
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
 
-  rank_fault_by_scoap();
-  //rank_fault_by_detect();
+  //rank_fault_by_scoap();
+  rank_fault_by_detect();
 
   //tdf_podem_x();
   tdf_medop_x();
@@ -125,8 +125,7 @@ ATPG::fptr ATPG::select_primary_fault()
       fault_selected = fptr_ele;
       return fault_selected;
     }
-  }
-  */
+  } */
   
   fptr fault_selected;
   for (fptr fptr_ele: flist_ranked) {
@@ -144,8 +143,8 @@ ATPG::fptr ATPG::select_secondary_fault()
 {
   /* configurations */
   bool PODEM_X = true;
-  enum DYNAMIC_TYPE { RANDOM, DETECTED_TIME, SCOAP };
-  DYNAMIC_TYPE dtype = RANDOM;
+  enum DYNAMIC_TYPE { RANDOM, DETECTED_TIME, SCOAP, DETECTION_SCORE };
+  DYNAMIC_TYPE dtype = DETECTED_TIME;
 
   /* if wfmap is not constructed, construct it first */
   std::pair<fptr, fptr> empty_fpair;
@@ -224,6 +223,12 @@ ATPG::fptr ATPG::select_secondary_fault()
                     double coa = (a->io == GO) ? wa->co.back() : wa->co[a->index];
                     double cob = (b->io == GO) ? wb->co.back() : wb->co[b->index];
                     return ((cca * coa) > (ccb * cob));
+                });
+      break;
+    DETECTION_SCORE:
+      std::sort(secondary_fault_list.begin(), secondary_fault_list.end(),
+                [&](const fptr& a, const fptr& b) {
+                    return (a->score > b->score);
                 });
       break;
     default:

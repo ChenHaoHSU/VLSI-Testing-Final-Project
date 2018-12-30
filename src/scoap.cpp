@@ -263,7 +263,7 @@ void ATPG::try_pattern_gen(void)
     /* evaluate how good the pattern is */
     if (test_found) {
       tdfsim_a_vector(vectors.back(), current_detect_num, false);
-      primary_fault->score = detection_score.back();
+      primary_fault->score = detection_count.back();  // detection_count or detection_score
     } else {
       primary_fault->score = -INT_MAX;
     }
