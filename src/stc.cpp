@@ -9,11 +9,20 @@
 #include "atpg.h"
 #include "disjointSet.h"
 
-#define RANDOM_SIMULATION_ITER_NUM  15
+#define RANDOM_SIMULATION_ITER_NUM  50
 
 void ATPG::static_compression() {
   random_simulation();
   compatibility_graph();
+  vector<string> tmpVectors = vectors;
+  vectors.clear();
+  for (int i = 0; i < 20; ++i) {
+    for (int j = 0; j < (int)tmpVectors.size(); ++j) {
+      vectors.emplace_back(tmpVectors[j]); 
+    }
+  }
+  detection_num = 8;
+  random_simulation();
   random_fill_x();
   random_simulation();
 }
@@ -36,7 +45,7 @@ void ATPG::compatibility_graph() {
   /* build edges for two compatible nodes */
   int nEdges = 0;
   for (int i = 0; i < nvec; ++i) {
-    for (int j = i + 1; j < min(nvec, i + 200); ++j) {
+    for (int j = i + 1; j < min(nvec, i + 300); ++j) {
       if (isCompatible(vectors[i], vectors[j])) {
         vEdges.emplace_back(nEdges, i, j);
         vNodes[i].mNeighbors[j] = nEdges;
@@ -241,13 +250,22 @@ void ATPG::random_simulation()
   vector<int> order(vectors.size());
   vector<bool> dropped(vectors.size(), false);
   iota(order.begin(), order.end(), 0);
-  reverse(order.begin(), order.end());
 
   fprintf(stderr, "# Static compression:\n");
   int drop_count, total_drop_count;
   total_drop_count = 0;
   for (iter = 0; iter < RANDOM_SIMULATION_ITER_NUM; ++iter) {
     drop_count = 0;
+    if (iter == 0) {
+      iota(order.begin(), order.end(), 0);
+    }
+    else if (iter == 1) {
+      reverse(order.begin(), order.end());
+    }
+    else {
+      random_shuffle(order.begin(), order.end());
+    }
+
     generate_fault_list();
     for (const int s : order) {
       if (!dropped[s]) {
@@ -260,8 +278,8 @@ void ATPG::random_simulation()
       }
     }
     total_drop_count += drop_count;
-    fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", iter, drop_count, total_drop_count);
-    random_shuffle(order.begin(), order.end());
+    if (drop_count > 0)
+      fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", iter, drop_count, total_drop_count);
   }
 
   iota(order.begin(), order.end(), 0);
@@ -278,7 +296,8 @@ void ATPG::random_simulation()
     }
   }
   total_drop_count += drop_count;
-  fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", iter, drop_count, total_drop_count);
+  if (drop_count > 0)
+    fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", iter, drop_count, total_drop_count);
 
   vector<string> compressed_vectors;
   for (size_t i = 0; i < vectors.size(); ++i) {

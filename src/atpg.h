@@ -284,12 +284,12 @@ private:
   void initialize_fault_primary_record();
   void initialize_all_assigned_flag();
   string extract_all_assigned_flag();
-  void restore_all_assigned_flag(const string);
+  void restore_all_assigned_flag(const string&);
   void initialize_vector();
-  string extract_vector_v1(const string);
-  void restore_vector_v1(const string);
-  string extract_vector_v2(const string);
-  void restore_vector_v2(const string);
+  string extract_vector_v1(const string&);
+  void restore_vector_v1(const string&);
+  string extract_vector_v2(const string&);
+  void restore_vector_v2(const string&);
 
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */
