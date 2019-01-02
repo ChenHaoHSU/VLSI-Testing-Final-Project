@@ -18,8 +18,10 @@ int ATPG::tdf_medop_x()
     int redundant_fnum = 0;
     int call_num = 0;
     
+    cerr << v2_loop_max_trial << endl;
+
     /* tune parameters !!! */
-    int v2_loop_limit = 1000;
+    int v2_loop_limit = (v2_loop_max_trial == -INT_MAX)? 1000: v2_loop_max_trial+1;
     int secondary_limit = 100;
     
     /* declare parameters */
@@ -44,6 +46,7 @@ int ATPG::tdf_medop_x()
     primary_fault = select_primary_fault();
     
     while ((primary_fault != nullptr) && (primary_fault->score != -INT_MAX)) {  // speed up
+    // while (primary_fault != nullptr) {
         // print_fault_description(primary_fault);
         /* test this primary fault */
         /* initialize the controlling boolean parameters */

@@ -294,6 +294,7 @@ private:
   bool pattern_has_enough_x(const string);
   vector<string> expand_pattern(const string);
   void expand_pattern_rec(vector<string>&, string, char, size_t);
+  void expand_pattern_rec_limited(vector<string>&, string, char, size_t, size_t);
 
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */
@@ -317,6 +318,7 @@ private:
                                               generated from a fault selection */
   vector<int> detection_count;             /* store the "number of faults" detected by the pattern 
                                               generated from a fault selection */
+  int v2_loop_max_trial;                   /* max trial number of v2 loop */
 
   /* detail declaration of WIRE, NODE, and FAULT classes */
   class WIRE {

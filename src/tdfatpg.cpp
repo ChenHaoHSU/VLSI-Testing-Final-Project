@@ -10,22 +10,39 @@
 #include "atpg.h"
 
 #define RANDOM_PATTERN_NUM  10000
+#define SHOW_TIME 1
 
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
+  clock_t timer;
 
+  timer = clock();
   //rank_fault_by_scoap();
   rank_fault_by_detect();
+  timer = clock() - timer;
+  #ifdef SHOW_TIME
+  fprintf(stderr, "Faults ranked. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  #endif
 
+  timer = clock();
   //tdf_podem_x();
   tdf_medop_x();
+  timer = clock() - timer;
+  #ifdef SHOW_TIME
+  fprintf(stderr, "MEDOP done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  #endif
 
   // random_pattern_generation(true);
   // compatibility_graph();
   // fill_x();
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
+  timer = clock();
   static_compression();
+  timer = clock() - timer;
+  #ifdef SHOW_TIME
+  fprintf(stderr, "STC done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  #endif
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   display_test_patterns();

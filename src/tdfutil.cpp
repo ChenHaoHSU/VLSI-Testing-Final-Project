@@ -223,6 +223,9 @@ vector<string> ATPG::expand_pattern(const string pattern)
     if (x_bit_count <= 5 && pos != string::npos) {
         expand_pattern_rec(expanded_patterns, p, '0', pos);
         expand_pattern_rec(expanded_patterns, p, '1', pos);
+    //} else if (x_bit_count > 5 && pos != string::npos) {
+    //    expand_pattern_rec_limited(expanded_patterns, p, '0', pos, 0);
+    //    expand_pattern_rec_limited(expanded_patterns, p, '1', pos, 0);
     } else {
         expanded_patterns.push_back(pattern);
     }
@@ -240,4 +243,18 @@ void ATPG::expand_pattern_rec(vector<string>& patterns, string pattern, char bit
     } else {
         patterns.push_back(pattern);
     }
+}
+
+void ATPG::expand_pattern_rec_limited(vector<string>& patterns, string pattern, char bit, size_t pos, size_t depth)
+{
+    ++depth;
+    pattern[pos] = bit;
+    pos = pattern.find_first_of('2', pos+1);
+    if (pos != string::npos && depth <= 2) {
+        expand_pattern_rec_limited(patterns, pattern, '0', pos, depth);
+        expand_pattern_rec_limited(patterns, pattern, '1', pos, depth);
+    } else {
+        patterns.push_back(pattern);
+    }
+
 }
