@@ -30,7 +30,7 @@ ATPG::ATPG() {
   /* orginally assigned in test.c */
   this->in_vector_no = 0;         /* number of test vectors generated */
 
-  this->v2_loop_max_trial = -INT_MAX;
+  this->v2_loop_max_trial = INT_MIN;
 }
 
 /* constructor of WIRE */

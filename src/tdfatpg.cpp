@@ -21,7 +21,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   rank_fault_by_detect();
   timer = clock() - timer;
   #ifdef SHOW_TIME
-  fprintf(stderr, "Faults ranked. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "# Faults ranked. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   #endif
 
   timer = clock();
@@ -29,7 +29,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   tdf_medop_x();
   timer = clock() - timer;
   #ifdef SHOW_TIME
-  fprintf(stderr, "MEDOP done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "# MEDOP done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   #endif
 
   // random_pattern_generation(true);
@@ -41,7 +41,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   static_compression();
   timer = clock() - timer;
   #ifdef SHOW_TIME
-  fprintf(stderr, "STC done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "# STC done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   #endif
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
@@ -208,14 +208,16 @@ ATPG::fptr ATPG::select_secondary_fault()
   std::vector<fptr> secondary_fault_list;
   for (fptr f: flist_undetect) {
     wptr w = sort_wlist[f->to_swlist];
-    if (f->fault_type == STUCK0) {
-      if (w->value == U && (w->value_v1 == U || w->value_v1 == 0)) {
-        secondary_fault_list.push_back(f);
+    if (f->score != INT_MIN) {
+      if (f->fault_type == STUCK0) {
+        if (w->value == U && (w->value_v1 == U || w->value_v1 == 0)) {
+          secondary_fault_list.push_back(f);
+        }
       }
-    }
-    else {
-      if (w->value == U && (w->value_v1 == U || w->value_v1 == 1)) {
-        secondary_fault_list.push_back(f);
+      else {
+        if (w->value == U && (w->value_v1 == U || w->value_v1 == 1)) {
+          secondary_fault_list.push_back(f);
+        }
       }
     }
   }

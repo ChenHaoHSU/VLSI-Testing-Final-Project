@@ -278,6 +278,8 @@ private:
   bool find_objective(const fptr, wptr&, int&);
   wptr find_cool_pi(const wptr, int&);
   void mark_fanin_cone(const wptr, vector<wptr>&);
+  wptr find_hardest_control_scoap(const nptr, const int);
+  wptr find_easiest_control_scoap(const nptr, const int);
   
   /* defined in tdfutil.cpp */
   void print_PI_assignments();

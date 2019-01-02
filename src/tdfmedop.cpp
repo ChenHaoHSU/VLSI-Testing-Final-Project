@@ -21,7 +21,7 @@ int ATPG::tdf_medop_x()
     cerr << v2_loop_max_trial << endl;
 
     /* tune parameters !!! */
-    int v2_loop_limit = (v2_loop_max_trial == -INT_MAX)? 1000: v2_loop_max_trial+1;
+    int v2_loop_limit = (v2_loop_max_trial == INT_MIN)? 1000: v2_loop_max_trial+1;
     int secondary_limit = 100;
     
     /* declare parameters */
@@ -45,7 +45,7 @@ int ATPG::tdf_medop_x()
     /* select primary fault */
     primary_fault = select_primary_fault();
     
-    while ((primary_fault != nullptr) && (primary_fault->score != -INT_MAX)) {  // speed up
+    while ((primary_fault != nullptr) && (primary_fault->score != INT_MIN)) {  // speed up
     // while (primary_fault != nullptr) {
         // print_fault_description(primary_fault);
         /* test this primary fault */
@@ -148,7 +148,7 @@ int ATPG::tdf_medop_x()
                     if (++detect_time >= detection_num) break;
                 }
             }
-        }
+        }      
         
         /* drop and select next primary fault */
         primary_fault->test_tried = true;
@@ -508,13 +508,17 @@ ATPG::wptr ATPG::find_cool_pi(const wptr obj_wire, int& obj_value)
         switch(obj_wire->inode.front()->type) {
             case   OR:
             case NAND:
-                new_obj_wire = (obj_value) ? find_easiest_control(obj_wire->inode.front())
-                               : find_hardest_control(obj_wire->inode.front());
+                //new_obj_wire = (obj_value) ? find_easiest_control(obj_wire->inode.front())
+                //               : find_hardest_control(obj_wire->inode.front());
+                new_obj_wire = (obj_value) ? find_easiest_control_scoap(obj_wire->inode.front(), obj_value)
+                                 : find_hardest_control_scoap(obj_wire->inode.front(), obj_value);
                 break;
             case  NOR:
             case  AND:
-                new_obj_wire = (obj_value) ? find_hardest_control(obj_wire->inode.front())
-                               : find_easiest_control(obj_wire->inode.front());
+                //new_obj_wire = (obj_value) ? find_hardest_control(obj_wire->inode.front())
+                //               : find_easiest_control(obj_wire->inode.front());
+                new_obj_wire = (obj_value) ? find_hardest_control_scoap(obj_wire->inode.front(), obj_value)
+                               : find_easiest_control_scoap(obj_wire->inode.front(), obj_value);
                 break;
             case  NOT:
             case  BUF:
@@ -538,4 +542,48 @@ ATPG::wptr ATPG::find_cool_pi(const wptr obj_wire, int& obj_value)
             return nullptr;
         }
     }
+}
+
+ATPG::wptr ATPG::find_hardest_control_scoap(const nptr n, const int value) 
+{
+    int max_scoap = INT_MIN;
+    wptr hardest_control = nullptr;
+
+    for (wptr w : n->iwire) {
+        if (w->value == U) {
+            if (value == 0) {
+                hardest_control = (w->cc0 > max_scoap)? w: hardest_control;
+                max_scoap = (w->cc0 > max_scoap)? w->cc0: max_scoap;
+            } else {
+                assert(value == 1);
+                hardest_control = (w->cc1 > max_scoap)? w: hardest_control;
+                max_scoap = (w->cc1 > max_scoap)? w->cc1: max_scoap;
+            }
+        }
+    }
+
+    return hardest_control;
+}
+
+
+
+ATPG::wptr ATPG::find_easiest_control_scoap(const nptr n, const int value) 
+{
+    int min_scoap = INT_MAX;
+    wptr easiest_control = nullptr;
+
+    for (wptr w : n->iwire) {
+        if (w->value == U) {
+            if (value == 0) {
+                easiest_control = (w->cc0 < min_scoap)? w: easiest_control;
+                min_scoap = (w->cc0 < min_scoap)? w->cc0: min_scoap;
+            } else {
+                assert(value == 1);
+                easiest_control = (w->cc1 < min_scoap)? w: easiest_control;
+                min_scoap = (w->cc1 < min_scoap)? w->cc1: min_scoap;
+            }
+        }
+    }
+
+    return easiest_control;
 }
