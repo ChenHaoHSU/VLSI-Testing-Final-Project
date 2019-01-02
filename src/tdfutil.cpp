@@ -59,7 +59,7 @@ string ATPG::extract_all_assigned_flag()
     return flags;
 }
 
-void ATPG::restore_all_assigned_flag(const string flags)
+void ATPG::restore_all_assigned_flag(const string& flags)
 {
     int ncktin = cktin.size();
     for (int i = 0; i < ncktin; ++i) {
@@ -87,7 +87,7 @@ void ATPG::initialize_vector()
 
 /* extract_vector_v1 */
 /* extract a string from the circuit as v1 pattern */
-string ATPG::extract_vector_v1(const string vec_v2)
+string ATPG::extract_vector_v1(const string& vec_v2)
 {
     int ncktin = cktin.size();
     string vec_v1;
@@ -111,7 +111,7 @@ string ATPG::extract_vector_v1(const string vec_v2)
     return vec_v1;
 }
 
-void ATPG::restore_vector_v1(const string vec_v1)
+void ATPG::restore_vector_v1(const string& vec_v1)
 {
     int ncktin = cktin.size();
     for (int i = 0; i < sort_wlist.size(); i++) {
@@ -140,7 +140,7 @@ void ATPG::restore_vector_v1(const string vec_v1)
 
 /* extract_vector_v2 */
 /* extract a string from the circuit as v2 pattern */
-string ATPG::extract_vector_v2(const string accumulated)
+string ATPG::extract_vector_v2(const string& accumulated)
 {
     int ncktin = cktin.size();
     string vec_v2;
@@ -165,7 +165,7 @@ string ATPG::extract_vector_v2(const string accumulated)
     return vec_v2;
 }
 
-void ATPG::restore_vector_v2(const string vec_v2)
+void ATPG::restore_vector_v2(const string& vec_v2)
 {
     int ncktin = cktin.size();
     for (int i = 0; i < sort_wlist.size(); i++) {
