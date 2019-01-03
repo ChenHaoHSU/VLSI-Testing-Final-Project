@@ -11,7 +11,6 @@
 int ATPG::tdf_medop_x()
 {
     int current_detect_num = 0;
-    int total_detect_num = 0;
     int total_backtrack_num = 0;
     int current_backtrack_num = 0;
     int aborted_fnum = 0;
@@ -173,7 +172,6 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
                        string& flags, const bool is_primary, const bool is_rollback)
 {
     /* declare some parameters */
-    int ncktin = cktin.size();
     wptr wpi, faulty_w;
     int obj_value;
     wptr obj_wire;
@@ -261,7 +259,8 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
         /* If a test is generated, find_test is true and we could leave this while-loop. */
         if (wpi != nullptr) {
             sim();
-            if (faulty_w = fault_evaluate(fault)) {
+            faulty_w = fault_evaluate(fault);
+            if (faulty_w != nullptr) {
                 forward_imply(faulty_w);
             }
             if (check_test()) {
@@ -301,8 +300,8 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
 int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tree, string& assignments)
 {
     /* declare some parameters */
+    wptr wpi;
     int ncktin = cktin.size();
-    wptr wpi, current_w;
     int desired_value = fault->fault_type;
     wptr faulty_w = sort_wlist[fault->to_swlist];
 
@@ -524,6 +523,10 @@ ATPG::wptr ATPG::find_cool_pi(const wptr obj_wire, int& obj_value)
             case  NOT:
             case  BUF:
                 new_obj_wire = obj_wire->inode.front()->iwire.front();
+                break;
+            default:
+                fprintf(stderr,"Something wrong in find_cool_pi(const wptr obj_wire, int& obj_value)\n");
+                new_obj_wire = nullptr;
                 break;
         }
 

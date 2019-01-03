@@ -3,7 +3,8 @@
 void ATPG::display_line(fptr fault) {
   int i;
 
-  for (i = 0; i < cktin.size(); i++) {
+  int ncktin = cktin.size();
+  for (i = 0; i < ncktin; i++) {
     switch (cktin[i]->value) {
       case 0: fprintf(stdout,"0"); break;
       case 1: fprintf(stdout,"1"); break;
@@ -13,7 +14,8 @@ void ATPG::display_line(fptr fault) {
     }
   }
   fprintf(stdout," ");
-  for (i = 0 ; i < fault->node->iwire.size(); i++) {
+  int niwire = fault->node->iwire.size();
+  for (i = 0 ; i < niwire; i++) {
     fprintf(stdout,"%s = ",fault->node->iwire[i]->name.c_str());
     switch (fault->node->iwire[i]->value) {
       case 0: fprintf(stdout,"0"); break;
@@ -41,8 +43,9 @@ void ATPG::display_line(fptr fault) {
 void ATPG::display_io(void) {
   int i;
 
+  int ncktin = cktin.size();
   fprintf(stdout,"T\'");
-  for (i = 0; i < cktin.size(); i++) {
+  for (i = 0; i < ncktin; i++) {
     switch (cktin[i]->value) {
       case 0: fprintf(stdout,"0"); break;
       case 1: fprintf(stdout,"1"); break;
@@ -53,8 +56,9 @@ void ATPG::display_io(void) {
   }
   fprintf(stdout,"'");
 
+  // int ncktout = cktout.size();
   // fprintf(stdout," ");
-  // for (i = 0; i < cktout.size(); i++) {
+  // for (i = 0; i < ncktout; i++) {
   //   switch (cktout[i]->value) {
   //     case 0: fprintf(stdout,"0"); break;
   //     case 1: fprintf(stdout,"1"); break;
@@ -70,8 +74,9 @@ void ATPG::display_io(void) {
 void ATPG::display_io_v1(void) {
   int i;
 
+  int ncktin = cktin.size();
   fprintf(stdout,"D\'");
-  for (i = 0; i < cktin.size(); i++) {
+  for (i = 0; i < ncktin; i++) {
     switch (cktin[i]->value_v1) {
       case 0: fprintf(stdout,"0"); break;
       case 1: fprintf(stdout,"1"); break;
@@ -85,8 +90,6 @@ void ATPG::display_io_v1(void) {
 }
 
 void ATPG::display_undetect(void) {
-  int i;
-  wptr w;
   string ufile = filename + ".uf";
 
   ofstream file(ufile, std::ifstream::out | std::ofstream::app); // open the input vectors' file

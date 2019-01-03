@@ -90,10 +90,11 @@ void ATPG::level_circuit(void) {
    so that we can speed up the evaluation of a gate */
 void ATPG::rearrange_gate_inputs(void) {
   nptr n;
-  for (int i = cktin.size(); i < sort_wlist.size(); i++) {
-    if (n = sort_wlist[i]->inode.front()) { // check every gate in the circuit
-      for (int j = 0; j < n->iwire.size(); j++) {  // check every pait of gate inputs
-        for (int k = j + 1; k < n->iwire.size(); k++) {
+  for (int i = cktin.size(), nckt = sort_wlist.size(); i < nckt; i++) {
+    n = sort_wlist[i]->inode.front();
+    if (n != nullptr) { // check every gate in the circuit
+      for (int j = 0, niwire = n->iwire.size(); j < niwire; j++) {  // check every pait of gate inputs
+        for (int k = j + 1; k < niwire; k++) {
           if (n->iwire[j]->level > n->iwire[k]->level) { // if order is wrong
             swap(n->iwire[j], n->iwire[k]); // swap the gate inptuts
           }
@@ -101,7 +102,7 @@ void ATPG::rearrange_gate_inputs(void) {
       }
     }
   }
-  
+
   //nptr n;
   //for (int i = cktin.size(); i < sort_wlist.size(); i++) {
   //  if (n = sort_wlist[i]->inode.front()) { // check every gate in the circuit

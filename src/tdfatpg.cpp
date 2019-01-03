@@ -305,7 +305,8 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
     !(find_test && (attempt_num == total_attempt_num))) {
 
     /* check if test possible.   Fig. 7.1 */
-    if (wpi = test_possible(fault)) {
+    wpi = test_possible(fault);
+    if (wpi != nullptr) {
       wpi->flag |= CHANGED;
       /* insert a new PI into decision_tree */
       decision_tree.push_front(wpi);
@@ -336,7 +337,8 @@ int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
  * this part is NOT in the original PODEM paper  */
 again:  if (wpi) {
       sim();
-      if (wfault = fault_evaluate(fault)) forward_imply(wfault);
+      wfault = fault_evaluate(fault);
+      if (wfault != nullptr) forward_imply(wfault);
       if (check_test() && (tdf_podem_v1(fault) == TRUE)) {
         /* set find_test true */
         find_test = true;

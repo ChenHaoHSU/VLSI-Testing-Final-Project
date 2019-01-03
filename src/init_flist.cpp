@@ -65,7 +65,7 @@ void ATPG::generate_fault_list(void) {
         f->eqv_fault_num = 1;
         /* f->index is the index number of gate input, 
             which GI fault is associated with*/
-        for (int k = 0; k < nptr_ele->iwire.size(); k++) {  
+        for (int k = 0, niwire = nptr_ele->iwire.size(); k < niwire; k++) {  
           if (nptr_ele->iwire[k] == w) f->index = k;
         }
         num_of_gate_fault++;
@@ -80,7 +80,7 @@ void ATPG::generate_fault_list(void) {
         f->fault_type = STF;
         f->to_swlist = w->wlist_index;
         f->eqv_fault_num = 1;
-        for (int k = 0; k < nptr_ele->iwire.size(); k++) {
+        for (int k = 0, niwire = nptr_ele->iwire.size(); k < niwire; k++) {
           if (nptr_ele->iwire[k] == w) f->index = k;
         }
         num_of_gate_fault++;
@@ -178,7 +178,7 @@ void ATPG::compute_fault_coverage(void) {
    create a dummy PO gate to feed each PO wire. */
 /* why do we need dummy gate? */
 void ATPG::create_dummy_gate(void) {
-  int i;
+  int i, ncktin, ncktout;
   int num_of_dummy;
   nptr n;
   char sgate[25];
@@ -187,7 +187,8 @@ void ATPG::create_dummy_gate(void) {
   num_of_dummy = 0;
 
   /* create a dummy PI gate for each PI wire */
-  for (i = 0; i < cktin.size(); i++) {
+  ncktin = cktin.size();
+  for (i = 0; i < ncktin; i++) {
     num_of_dummy++;
 	  
     /* the dummy gate name is  "dummay_gate#"  */
@@ -202,7 +203,8 @@ void ATPG::create_dummy_gate(void) {
   } // for i
 
   /* create a dummy PO gate for each PO wire */
-  for (i = 0; i < cktout.size(); i++) {
+  ncktout = cktout.size();
+  for (i = 0; i < ncktout; i++) {
     num_of_dummy++;
 
     /* the dummy gate name is  "dummay_gate#"  */
@@ -222,5 +224,6 @@ char ATPG::itoc(const int& i) {
     case 2: return '2';
     case 1: return '1';
     case 0: return '0';
+    default: return '2';
   }
 }

@@ -52,7 +52,8 @@ int ATPG::podem(const fptr fault, int& current_backtracks) {
     !(find_test && (attempt_num == total_attempt_num))) {
     
     /* check if test possible.   Fig. 7.1 */
-    if (wpi = test_possible(fault)) {
+    wpi = test_possible(fault);
+    if (wpi != nullptr) {
       wpi->flag |= CHANGED;
       /* insert a new PI into decision_tree */
       decision_tree.push_front(wpi);
@@ -83,7 +84,8 @@ int ATPG::podem(const fptr fault, int& current_backtracks) {
  * this part is NOT in the original PODEM paper  */
 again:  if (wpi) {
       sim();
-      if (wfault = fault_evaluate(fault)) forward_imply(wfault);
+      wfault = fault_evaluate(fault);
+      if (wfault != nullptr) forward_imply(wfault);
       if (check_test()) {
         find_test = true;
         /* if multiple patterns per fault, print out every test cube */
@@ -360,6 +362,10 @@ ATPG::wptr ATPG::find_pi_assignment(const wptr object_wire, const int& object_le
       case  BUF:
         new_object_wire = object_wire->inode.front()->iwire.front();
         break;
+      default:
+        fprintf(stderr,"Something wrong in find_pi_assignment(const wptr object_wire, const int& object_level)-1\n");
+        new_object_wire = nullptr;
+        break;
     }
 
     switch (object_wire->inode.front()->type) {
@@ -370,6 +376,10 @@ ATPG::wptr ATPG::find_pi_assignment(const wptr object_wire, const int& object_le
       case  NOT:
       case  NOR:
       case NAND: new_object_level = object_level ^ 1; break;
+      default:
+        fprintf(stderr,"Something wrong in find_pi_assignment(const wptr object_wire, const int& object_level)-2\n");
+        new_object_level = 0;
+        break;
     }
     if (new_object_wire) return(find_pi_assignment(new_object_wire,new_object_level));
     else return(nullptr);
@@ -430,6 +440,7 @@ ATPG::nptr ATPG::find_propagate_gate(const int& level) {
       }
     }
   }
+  return nullptr;
 }/* end of find_propagate_gate */
 
 
@@ -437,8 +448,7 @@ ATPG::nptr ATPG::find_propagate_gate(const int& level) {
  * returns TRUE if X pth exists
  * returns NULL if no X path exists*/
 bool ATPG::trace_unknown_path(const wptr w) {
-  int i,nout;
-  wptr wtemp;
+  int i, nout;
 	//TODO search X-path
 	//HINT if w is PO, return TRUE, if not, check all its fanout 
 	//------------------------------------- hole ---------------------------------------

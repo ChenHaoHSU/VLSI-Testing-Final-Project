@@ -23,7 +23,7 @@ void ATPG::fault_simulate_vectors(int& total_detect_num) {
   int current_detect_num = 0;
  
   /* for every vector */
-  for (i = vectors.size()-1; i >= 0; i--) {
+  for (i = vectors.size() - 1; i >= 0; i--) {
     fault_sim_a_vector(vectors[i], current_detect_num);
     total_detect_num += current_detect_num;
     fprintf(stdout,"vector[%d] detects %d faults (%d)\n",i,current_detect_num,total_detect_num);
@@ -37,7 +37,7 @@ void ATPG::fault_sim_a_vector(const string& vec, int& num_of_current_detect) {
   fptr simulated_fault_list[num_of_pattern];
   fptr f;
   int fault_type;
-  int i,start_wire_index, nckt;
+  int i, start_wire_index, nckt, ncktin;
   int num_of_fault;
   
   
@@ -54,7 +54,8 @@ void ATPG::fault_sim_a_vector(const string& vec, int& num_of_current_detect) {
   start_wire_index = 10000;
   
   /* for every input, set its value to the current vector value */
-  for(i = 0; i < cktin.size(); i++) {
+  ncktin = cktin.size();
+  for(i = 0; i < ncktin; i++) {
     cktin[i]->value = ctoi(vec[i]);
   }
 
@@ -62,7 +63,7 @@ void ATPG::fault_sim_a_vector(const string& vec, int& num_of_current_detect) {
    * nodes as unknown (2) */
   nckt = sort_wlist.size();
   for (i = 0; i < nckt; i++) {
-    if (i < cktin.size()) {
+    if (i < ncktin) {
       sort_wlist[i]->flag |= CHANGED;
     }
     else {
@@ -165,7 +166,7 @@ void ATPG::fault_sim_a_vector(const string& vec, int& num_of_current_detect) {
 		   
               num_of_fault++;
               start_wire_index = min(start_wire_index, f->to_swlist);
-              }
+            }
           }
         }
       } // if  gate input fault
@@ -287,18 +288,22 @@ void ATPG::fault_sim_evaluate(const wptr w) {
     case EQV:
       new_value = PEQUIV(n->iwire[0]->wire_value2, n->iwire[1]->wire_value2);
       break;
+    default:
+      fprintf(stderr,"Something wrong in fault_sim_evaluate(const wptr w)\n");
+      new_value = 0;
+      break;
   }
 
   /* if the new_value is different than the wire_value1 (the good value),
    * save it */
-  if (w->wire_value1 != new_value) {
+  if ((unsigned int)(w->wire_value1) != new_value) {
 
     /* if this wire is faulty, make sure the fault remains injected */
     if (w->flag & FAULT_INJECTED) {
       combine(w, new_value);
     }
 
-    /* update wire_value2 */ 
+    /* update wire_value2 */
     w->wire_value2 = new_value;
 
     /* insert wire w into the faulty_wire list */

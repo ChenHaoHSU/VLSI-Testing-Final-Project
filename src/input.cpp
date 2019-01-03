@@ -282,6 +282,7 @@ int ATPG::FindType(const string& gatetype) {
     return(EQV);
   }
   error("unreconizable gate type");
+  return (0);
 }/* end of FindType */
 
 /*
