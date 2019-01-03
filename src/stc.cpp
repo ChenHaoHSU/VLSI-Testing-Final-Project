@@ -14,13 +14,7 @@
 void ATPG::static_compression() {
   random_simulation();
   compatibility_graph();
-  vector<string> tmpVectors = vectors;
-  vectors.clear();
-  for (int i = 0; i < 20; ++i) {
-    for (int j = 0; j < (int)tmpVectors.size(); ++j) {
-      vectors.emplace_back(tmpVectors[j]); 
-    }
-  }
+  expand_vectors(20);
   detection_num = 8;
   random_simulation();
   random_fill_x();
@@ -237,6 +231,16 @@ void ATPG::random_fill_x() {
       if (vec[i] == '2' || vec[i] == 'x') {
         vec[i] = (rand() & 01) ? '1' : '0';
       }
+    }
+  }
+}
+
+void ATPG::expand_vectors(const int n) {
+  vector<string> tmpVectors = vectors;
+  vectors.clear();
+  for (int i = 0; i < n - 1; ++i) {
+    for (int j = 0; j < (int)tmpVectors.size(); ++j) {
+      vectors.emplace_back(tmpVectors[j]); 
     }
   }
 }

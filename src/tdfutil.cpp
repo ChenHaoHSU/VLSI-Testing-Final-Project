@@ -114,7 +114,8 @@ string ATPG::extract_vector_v1(const string& vec_v2)
 void ATPG::restore_vector_v1(const string& vec_v1)
 {
     int ncktin = cktin.size();
-    for (int i = 0; i < sort_wlist.size(); i++) {
+    int nckt = sort_wlist.size();
+    for (int i = 0; i < nckt; i++) {
         sort_wlist[i]->value = U;
     }
     for (int i = 0; i < ncktin; i++) {
@@ -168,7 +169,8 @@ string ATPG::extract_vector_v2(const string& accumulated)
 void ATPG::restore_vector_v2(const string& vec_v2)
 {
     int ncktin = cktin.size();
-    for (int i = 0; i < sort_wlist.size(); i++) {
+    int nckt = sort_wlist.size();
+    for (int i = 0; i < nckt; i++) {
         sort_wlist[i]->value = U;
     }
     for (int i = 0; i < ncktin; i++) {
@@ -193,7 +195,7 @@ void ATPG::restore_vector_v2(const string& vec_v2)
     sim();
 }
 
-bool ATPG::pattern_has_enough_x(const string pattern)
+bool ATPG::pattern_has_enough_x(const string& pattern)
 {
     int required_x_bit = (int)ceil(log2((double)detection_num));
     int x_bit_count = 0;
@@ -207,10 +209,8 @@ bool ATPG::pattern_has_enough_x(const string pattern)
     return (x_bit_count > required_x_bit);
 }
 
-vector<string> ATPG::expand_pattern(const string pattern)
+void ATPG::expand_pattern(vector<string>& expanded_patterns, const string& pattern)
 {
-    string p = pattern;
-    vector<string> expanded_patterns;
     int x_bit_count = 0;
 
     for (size_t i = 0; i < pattern.size(); ++i) {
@@ -221,16 +221,14 @@ vector<string> ATPG::expand_pattern(const string pattern)
 
     size_t pos = pattern.find_first_of('2');
     if (x_bit_count <= 3 && pos != string::npos) {
-        expand_pattern_rec(expanded_patterns, p, '0', pos);
-        expand_pattern_rec(expanded_patterns, p, '1', pos);
+        expand_pattern_rec(expanded_patterns, pattern, '0', pos);
+        expand_pattern_rec(expanded_patterns, pattern, '1', pos);
     } else if (x_bit_count > 3 && pos != string::npos) {
-        expand_pattern_rec_limited(expanded_patterns, p, '0', pos, 0);
-        expand_pattern_rec_limited(expanded_patterns, p, '1', pos, 0);
+        expand_pattern_rec_limited(expanded_patterns, pattern, '0', pos, 0);
+        expand_pattern_rec_limited(expanded_patterns, pattern, '1', pos, 0);
     } else {
         expanded_patterns.push_back(pattern);
     }
-
-    return expanded_patterns;
 }
 
 void ATPG::expand_pattern_rec(vector<string>& patterns, string pattern, char bit, size_t pos)

@@ -9,7 +9,7 @@
 
 #include "atpg.h"
 
-#define RANDOM_PATTERN_NUM  10000
+#define RANDOM_PATTERN_NUM 100000
 #define SHOW_TIME 1
 
 void ATPG::transition_delay_fault_atpg(void) {
@@ -34,7 +34,7 @@ void ATPG::transition_delay_fault_atpg(void) {
 
   // random_pattern_generation(true);
   // compatibility_graph();
-  // fill_x();
+  // random_fill_x();
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   timer = clock();

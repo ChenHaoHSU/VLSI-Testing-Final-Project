@@ -293,8 +293,8 @@ private:
   void restore_vector_v1(const string&);
   string extract_vector_v2(const string&);
   void restore_vector_v2(const string&);
-  bool pattern_has_enough_x(const string);
-  vector<string> expand_pattern(const string);
+  bool pattern_has_enough_x(const string&);
+  void expand_pattern(vector<string>&, const string&);
   void expand_pattern_rec(vector<string>&, string, char, size_t);
   void expand_pattern_rec_limited(vector<string>&, string, char, size_t, size_t);
 
@@ -305,6 +305,7 @@ private:
   void random_fill_x();
   bool isCompatible(const string& vec1, const string& vec2) const;
   void random_simulation();
+  void expand_vectors(const int);
 
   /* defined in scoap.cpp */
   void calculate_cc(void);                 /* calculate controllability */

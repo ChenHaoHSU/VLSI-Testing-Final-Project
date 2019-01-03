@@ -139,7 +139,8 @@ int ATPG::tdf_medop_x()
         }
 
         if (test_found_primary) {
-            vector<string> expanded_patterns = expand_pattern(tdf_vec);
+            vector<string> expanded_patterns;
+            expand_pattern(expanded_patterns, tdf_vec);
             int detect_time = primary_fault->detected_time;
             while (detect_time < detection_num) {
                 for (string pattern : expanded_patterns) {
