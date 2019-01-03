@@ -300,7 +300,7 @@ private:
 
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */
-  void compatibility_graph();              /* Tseng-Siewiorek algorithm: solve minimum clique 
+  int compatibility_graph();               /* Tseng-Siewiorek algorithm: solve minimum clique 
                                               partition problem on compatibility graphs */
   void random_fill_x();                    /* randomly fill all unknown values in vectors */
   bool isCompatible(const string&, const string&) const;

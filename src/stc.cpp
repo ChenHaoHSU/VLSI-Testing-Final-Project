@@ -13,9 +13,9 @@
 
 void ATPG::static_compression() {
   random_simulation();
-  compatibility_graph();
+  int max_supernode = compatibility_graph();
 
-  expand_vectors(19);
+  expand_vectors(max_supernode);
 
   random_simulation();
   random_fill_x();
@@ -24,7 +24,7 @@ void ATPG::static_compression() {
 
 /* Tseng-Siewiorek algorithm: solve minimum clique partition problem on compatibility graphs 
    return the number of nodes in the maximum super-node */
-void ATPG::compatibility_graph() {
+int ATPG::compatibility_graph() {
   int nvec = vectors.size();
 
   vector<Node> vNodes(0); /* all nodes are here; vNodes.size() == vectors.size() */
@@ -41,7 +41,7 @@ void ATPG::compatibility_graph() {
   /* build edges for two compatible nodes */
   int nEdges = 0;
   for (int i = 0; i < nvec; ++i) {
-    for (int j = i + 1; j < min(nvec, i + 300); ++j) {
+    for (int j = i + 1; j < min(nvec, i + 500); ++j) {
       if (isCompatible(vectors[i], vectors[j])) {
         vEdges.emplace_back(nEdges, i, j);
         vNodes[i].mNeighbors[j] = nEdges;
@@ -137,22 +137,24 @@ void ATPG::compatibility_graph() {
     }
 
     /* remove non-common-neighbor edges*/
-    for (const auto& p : new_node.mNeighbors) {
-      if (sCommonNeighbors.count(p.first) == 0 && p.first != del_n) {
-        assert(p.first != new_n);
-        assert(vNodes[p.first].mNeighbors.count(del_n) == 0);
-        vNodes[p.first].mNeighbors.erase(new_n);
-        vNodes[new_n].mNeighbors.erase(p.first);
-        pq.erase(vIterators[p.second]);
+    int rm_e = 0;
+    for (const int p : sAllNeighbors) {
+      if (sCommonNeighbors.count(p) > 0) continue;
+      if (new_node.mNeighbors.count(p) > 0) {
+        assert(p != new_n && p != del_n);
+        assert(vNodes[p].mNeighbors.count(del_n) == 0);
+        rm_e = vNodes[p].mNeighbors[new_n];
+        pq.erase(vIterators[rm_e]);
+        vNodes[p].mNeighbors.erase(new_n);
+        vNodes[new_n].mNeighbors.erase(p);
       }
-    }
-    for (const auto& p : del_node.mNeighbors) {
-      if (sCommonNeighbors.count(p.first) == 0 && p.first != new_n) {
-        assert(p.first != del_n);
-        assert(vNodes[p.first].mNeighbors.count(new_n) == 0);
-        vNodes[p.first].mNeighbors.erase(del_n);
-        vNodes[del_n].mNeighbors.erase(p.first);
-        pq.erase(vIterators[p.second]);
+      if (del_node.mNeighbors.count(p) > 0) {
+        assert(p != new_n && p != del_n);
+        assert(vNodes[p].mNeighbors.count(new_n) == 0);
+        rm_e = vNodes[p].mNeighbors[del_n];
+        pq.erase(vIterators[rm_e]);
+        vNodes[p].mNeighbors.erase(del_n);
+        vNodes[del_n].mNeighbors.erase(p);
       }
     }
     
@@ -164,7 +166,6 @@ void ATPG::compatibility_graph() {
         pq.modify(vIterators[q.second], vEdges[q.second]);
       }
     }
-
     assert(del_node.mNeighbors.empty());
   }
 
@@ -182,27 +183,29 @@ void ATPG::compatibility_graph() {
     const string& current_vec = vectors[i]; 
     string& root_vec = vectors[ds.find(i)];
     for (int j = 0; j < (int)current_vec.size(); ++j) {
-      if (current_vec[j] != '2') {
-        if (current_vec[j] == '0') {
-          assert(root_vec[j] != '1');
-          root_vec[j] = '0';
-        }
-        else if (current_vec[j] == '1') {
-          assert(root_vec[j] != '0');
-          root_vec[j] = '1';
-        }
+      if (current_vec[j] == '0') {
+        assert(root_vec[j] != '1');
+        root_vec[j] = '0';
+      }
+      else if (current_vec[j] == '1') {
+        assert(root_vec[j] != '0');
+        root_vec[j] = '1';
       }
     }
   }
 
   /* collect all merged vectors */
   set<string> new_vectors;
+  vector<int> supernode_num_list(vectors.size(), 0);
   for (int i = 0; i < nvec; ++i) {
+    supernode_num_list[ds.find(i)] += 1;
     new_vectors.insert(vectors[ds.find(i)]);
   }
+  int max_supernode = *max_element(supernode_num_list.begin(), supernode_num_list.end());
 
   /* print msg */
   fprintf(stderr, "# Compatibility graph:\n");
+  fprintf(stderr, "#   max supernode: %d\n", max_supernode);
   fprintf(stderr, "#   drop %lu vector(s). (%lu)\n", vectors.size() - new_vectors.size(), new_vectors.size());
 
   /* update vectors */
@@ -210,6 +213,8 @@ void ATPG::compatibility_graph() {
   for (const string& vec : new_vectors) {
     vectors.emplace_back(vec);
   }
+
+  return max_supernode;
 }
 
 bool ATPG::isCompatible(const string& vec1, const string& vec2) const {
@@ -269,13 +274,14 @@ void ATPG::random_simulation()
   init_total_count = vectors.size();
   for (iter = 0; iter < RANDOM_SIMULATION_ITER_NUM; ++iter) {
     drop_count = 0;
-    if (iter == 0 || iter == RANDOM_SIMULATION_ITER_NUM) {
+    if (iter == 0) {
       iota(order.begin(), order.end(), 0);
-    }
-    else if (iter == 1) {
       reverse(order.begin(), order.end());
-    }
-    else {
+    } else if (iter == 1) {
+      reverse(order.begin(), order.end());
+    } else if (iter == RANDOM_SIMULATION_ITER_NUM) {
+      iota(order.begin(), order.end(), 0);
+    } else {
       random_shuffle(order.begin(), order.end());
     }
 
