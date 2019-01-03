@@ -6,7 +6,7 @@
 /*           last update : 01/21/2018                                 */
 /**********************************************************************/
 
-#define NDEBUG
+// #define NDEBUG
 
 #include <cassert>
 #include <climits>
@@ -298,14 +298,14 @@ private:
   void expand_pattern_rec(vector<string>&, string, char, size_t);
   void expand_pattern_rec_limited(vector<string>&, string, char, size_t, size_t);
 
-
   /* defined in stc.cpp */
   void static_compression(void);           /* static test compression */
-  void compatibility_graph();
-  void random_fill_x();
-  bool isCompatible(const string& vec1, const string& vec2) const;
-  void random_simulation();
-  void expand_vectors(const int);
+  void compatibility_graph();              /* Tseng-Siewiorek algorithm: solve minimum clique 
+                                              partition problem on compatibility graphs */
+  void random_fill_x();                    /* randomly fill all unknown values in vectors */
+  bool isCompatible(const string&, const string&) const;
+  void random_simulation();                /* use tdfsim to drop useless vectors */
+  void expand_vectors(const size_t);       /* duplicate vectors n times */
 
   /* defined in scoap.cpp */
   void calculate_cc(void);                 /* calculate controllability */
