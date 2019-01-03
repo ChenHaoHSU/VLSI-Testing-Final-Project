@@ -106,6 +106,8 @@ void ATPG::evaluate(nptr n) {
         case EQV:
             new_value =INV[(XORTABLE[n->iwire[0]->value][n->iwire[1]->value])];
             break;
+        default:
+            new_value = 0;
     }
     if (old_value != new_value) {
         n->owire.front()->flag |= CHANGED;
@@ -163,6 +165,8 @@ void ATPG::evaluate_v1(nptr n) {
         case EQV:
             new_value =INV[(XORTABLE[n->iwire[0]->value_v1][n->iwire[1]->value_v1])];
             break;
+        default:
+            new_value = 0;
     }
     if (old_value != new_value) {
         n->owire.front()->flag |= CHANGED;

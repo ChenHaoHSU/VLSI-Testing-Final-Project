@@ -48,7 +48,7 @@ void ATPG::calculate_cc(void)
         }
         wire->cc0 = (node_type == AND)? (min_cc + 1): (sum_cc + 1);
         wire->cc1 = (node_type == AND)? (sum_cc + 1): (min_cc + 1);
-        break;      
+        break;
       
       case OR:
       case NOR:
@@ -74,7 +74,7 @@ void ATPG::calculate_cc(void)
 
       default:
         assert(0);  // should not happen
-        break;    
+        break;
     }
   }
 

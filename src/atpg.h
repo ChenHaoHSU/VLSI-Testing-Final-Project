@@ -258,7 +258,7 @@ private:
   fptr select_secondary_fault(void);        /* select a secondary fault for podem_x */
   int tdf_podem_v1(const fptr);             /* generate test vector 1, considering fault/LOS constraints */
   int tdf_podem_v2(const fptr, int&);       /* generate test vector 2, injection/activation/propagation */
-  int tdf_podem_x(void);                    /* dynamic test compression by podem-x */
+  void tdf_podem_x(void);                    /* dynamic test compression by podem-x */
   int tdf_backtrace(const wptr, const int&);
   int tdf_set_uniquely_implied_value(const fptr fault);
   int tdf_backward_imply(const wptr current_wire, const int& desired_logic_value);

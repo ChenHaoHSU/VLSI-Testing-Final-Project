@@ -40,7 +40,7 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
   fptr simulated_fault_list[num_of_pattern];
   fptr f;
   int fault_type;
-  int i, start_wire_index, nckt;
+  int i, start_wire_index, nckt, ncktin;
   int num_of_fault;
   bool fault_active;
   
@@ -60,7 +60,8 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
    * V1 simulation
    *************************/
   /* for every input, set its value to the current vector value */
-  for(i = 0; i < cktin.size(); i++) {
+  ncktin = cktin.size();
+  for(i = 0; i < ncktin; ++i) {
     cktin[i]->value = ctoi(vec[i]);
   }
   /* initialize the circuit - mark all inputs as changed and all other
@@ -68,7 +69,7 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
   nckt = sort_wlist.size();
   for (i = 0; i < nckt; i++) {
     sort_wlist[i]->flag &= ~CHANGED;
-    if (i < cktin.size()) {
+    if (i < ncktin) {
       sort_wlist[i]->flag |= CHANGED;
     }
     else {
@@ -88,7 +89,7 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
    * V2 simulation
    *************************/
   /* for every input, set its value to V2 */
-  for(i = 0; i < cktin.size(); i++) {
+  for(i = 0; i < ncktin; i++) {
     cktin[i]->value = (i == 0 ? ctoi(vec.back()) : ctoi(vec[i-1]));
   }
   /* initialize the circuit - mark all inputs as changed and all other
@@ -96,7 +97,7 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
   nckt = sort_wlist.size();
   for (i = 0; i < nckt; i++) {
     sort_wlist[i]->flag &= ~CHANGED;
-    if (i < cktin.size()) {
+    if (i < ncktin) {
       sort_wlist[i]->flag |= CHANGED;
     }
     else {
@@ -333,7 +334,6 @@ ATPG::wptr ATPG::tdf_get_faulty_wire(const fptr f, int& fault_type) {
   bool is_faulty;
 
   is_faulty = true;
-  wptr faulty_wire;
   nin = f->node->iwire.size();
   switch(f->node->type) {
     case NOT:

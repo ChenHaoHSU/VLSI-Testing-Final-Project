@@ -47,11 +47,10 @@ void ATPG::transition_delay_fault_atpg(void) {
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   display_test_patterns();
   // display_undetect();
-
 }
 
 /* dynamic test compression by podem-x */
-int ATPG::tdf_podem_x()
+void ATPG::tdf_podem_x()
 {
   string vec;
   int current_detect_num = 0;
@@ -161,7 +160,7 @@ ATPG::fptr ATPG::select_secondary_fault()
   /* configurations */
   bool PODEM_X = true;
   enum DYNAMIC_TYPE { RANDOM, DETECTED_TIME, SCOAP, DETECTION_SCORE };
-  DYNAMIC_TYPE dtype = DETECTED_TIME;
+  DYNAMIC_TYPE dtype = RANDOM;
 
   /* if wfmap is not constructed, construct it first */
   std::pair<fptr, fptr> empty_fpair;
@@ -184,7 +183,7 @@ ATPG::fptr ATPG::select_secondary_fault()
 
   /* check if there is any PI = U. if not, return nullptr */
   bool have_u = false;
-  for (int i = 0; i < cktin.size(); ++i) {
+  for (int i = 0, ncktin = cktin.size(); i < ncktin; ++i) {
     if (cktin[i]->value == U) {
       have_u = true;
       break;
@@ -195,7 +194,7 @@ ATPG::fptr ATPG::select_secondary_fault()
   /* [PODEM-X] check if there is any PO = U. if not, return nullptr */
   if (PODEM_X) {
     have_u = false;
-    for (int i = 0; i < cktout.size(); ++i) {
+    for (int i = 0, ncktout = cktout.size(); i < ncktout; ++i) {
       if (cktout[i]->value == U) {
         have_u = true;
         break;
@@ -224,16 +223,16 @@ ATPG::fptr ATPG::select_secondary_fault()
 
   /* select a prefered fault */
   switch (dtype) {
-    RANDOM:
+    case RANDOM:
       std::random_shuffle(secondary_fault_list.begin(), secondary_fault_list.end());
       break;
-    DETECTED_TIME:
+    case DETECTED_TIME:
       std::sort(secondary_fault_list.begin(), secondary_fault_list.end(),
                 [&](const fptr& a, const fptr& b) {
                     return (a->detected_time < b->detected_time);
                 });
       break;
-    SCOAP:
+    case SCOAP:
       std::sort(secondary_fault_list.begin(), secondary_fault_list.end(),
                 [&](const fptr& a, const fptr& b) {
                     const wptr wa = sort_wlist[a->to_swlist], wb = sort_wlist[b->to_swlist];
@@ -244,7 +243,7 @@ ATPG::fptr ATPG::select_secondary_fault()
                     return ((cca * coa) > (ccb * cob));
                 });
       break;
-    DETECTION_SCORE:
+    case DETECTION_SCORE:
       std::sort(secondary_fault_list.begin(), secondary_fault_list.end(),
                 [&](const fptr& a, const fptr& b) {
                     return (a->score > b->score);
@@ -262,16 +261,16 @@ ATPG::fptr ATPG::select_secondary_fault()
 /* generate test vector 2, considering fault/LOS constraints */
 int ATPG::tdf_podem_v2(const fptr fault, int& current_backtracks)
 {
-  int i,ncktwire,ncktin;
+  int i,nckt,ncktin;
   wptr wpi; // points to the PI currently being assigned
   forward_list<wptr> decision_tree; // design_tree (a LIFO stack)
   wptr wfault;
   int attempt_num = 0;  // counts the number of pattern generated so far for the given fault
 
   /* initialize all circuit wires to unknown */
-  ncktwire = sort_wlist.size();
+  nckt = sort_wlist.size();
   ncktin = cktin.size();
-  for (i = 0; i < ncktwire; i++) {
+  for (i = 0; i < nckt; i++) {
     sort_wlist[i]->value = U;
     sort_wlist[i]->value_v1 = U;
   }
@@ -651,8 +650,9 @@ void ATPG::random_pattern_generation(const bool use_unknown) {
   unordered_set<string> sVector;
   string vec1(cktin.size() + 1, '0');
   string vec2(cktin.size() + 1, '0');
+  int ncktin = cktin.size();
   for (int i = 0; i < RANDOM_PATTERN_NUM; ++i) {
-    for (int j = 0; j < cktin.size() + 1; ++j) {
+    for (int j = 0; j < ncktin + 1; ++j) {
       if (use_unknown && (rand() % 10 < 9)) {
         vec1[j] = 'x';
         vec2[j] = 'x';
@@ -720,16 +720,26 @@ ATPG::wptr ATPG::find_pi_assignment_v1(const wptr object_wire, const int& object
       case  BUF:
         new_object_wire = object_wire->inode.front()->iwire.front();
         break;
+      default:
+        fprintf(stderr, "[WARN] Something wrong in find_pi_assignment_v1()-1\n");
+        new_object_wire = nullptr;
+        break;
     }
 
     switch (object_wire->inode.front()->type) {
       case  BUF:
       case  AND:
-      case   OR: new_object_level = object_level; break;
+      case   OR:
+        new_object_level = object_level; break;
       /* flip objective value  Fig 9.6 */
       case  NOT:
       case  NOR:
-      case NAND: new_object_level = object_level ^ 1; break;
+      case NAND:
+        new_object_level = object_level ^ 1; break;
+      default:
+        fprintf(stderr, "[WARN] Something wrong in find_pi_assignment_v1()-2\n");
+        new_object_level = 0;
+        break;
     }
     if (new_object_wire) return(find_pi_assignment_v1(new_object_wire,new_object_level));
     else return(nullptr);
