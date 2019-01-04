@@ -200,7 +200,7 @@ void ATPG::try_pattern_gen(void)
   int current_backtrack_num = 0;
   
   /* tune parameters !!! */
-  int v2_loop_limit = 1000;
+  int v2_loop_limit = 650;
   
   /* declare parameters */
   LIFO   d_tree;           // decision tree. must be clear in each outmost loop.

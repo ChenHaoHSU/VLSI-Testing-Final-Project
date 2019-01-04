@@ -10,7 +10,7 @@
 /* constructor of ATPG */
 ATPG::ATPG() {
   /* orginally assigned in tpgmain.c */
-  this->backtrack_limit = 500;       /* default value */
+  this->backtrack_limit = 200;       /* default value */
   this->backtrack_limit_v1 = 100;   /* default value */
   this->total_attempt_num = 1;      /* default value */
   this->fsim_only = false;          /* flag to indicate fault simulation only */

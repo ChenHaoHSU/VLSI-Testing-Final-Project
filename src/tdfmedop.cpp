@@ -16,8 +16,6 @@ int ATPG::tdf_medop_x()
     int aborted_fnum = 0;
     int redundant_fnum = 0;
     int call_num = 0;
-    
-    cerr << v2_loop_max_trial << endl;
 
     /* tune parameters !!! */
     int v2_loop_limit = (v2_loop_max_trial == INT_MIN)? 1000: v2_loop_max_trial+1;
