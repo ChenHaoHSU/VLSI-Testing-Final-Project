@@ -87,9 +87,9 @@ void ATPG::pre_process() {
       break;
     case C6288:
       fprintf(stderr, "#   case: c6288\n");
-      this->backtrack_limit     = 200;
+      this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
-      this->v2_loop_limit       = 10;
+      this->v2_loop_limit       = 8;
       this->random_sim_num      = 20;
       this->random_sim_num_post = 20;
       break;
@@ -137,6 +137,7 @@ void ATPG::post_process() {
   int detect_num;
   size_t nFaults;
   
+  fprintf(stderr, "#   Save lucky faults:\n");
   while (iter < 5) {
 
     /* tdf fault sim */
@@ -154,7 +155,7 @@ void ATPG::post_process() {
     /* calculate the number of lucky faults */
     nFaults = 0;
     for (const fptr f: flist_undetect) if (f) ++nFaults;
-    fprintf(stderr, "#   Iter %d: Number of lucky faults: %lu\n", iter, nFaults);
+    fprintf(stderr, "#     Iter %d: Number of lucky faults: %lu\n", iter, nFaults);
 
     /* no more lucky faults, break out of the while loop */
     if (nFaults == 0) break;
@@ -183,7 +184,10 @@ void ATPG::post_process() {
   /* do static compression if any good vector was found */
   if (iter > 0) {
     random_sim_num = random_sim_num_post;
-    static_compression();
+    random_simulation();
+    int max_supernode = compatibility_graph();
+    expand_vectors(max_supernode);
+    random_simulation();
   }
 }
 
