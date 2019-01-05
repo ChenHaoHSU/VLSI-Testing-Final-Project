@@ -14,6 +14,7 @@ ATPG::ATPG() {
   this->backtrack_limit_v1 = 100;   /* default value */
   this->v2_loop_limit = 10;
   this->random_sim_num = 30;
+  this->random_sim_num_post = 30;
 
   this->total_attempt_num = 1;      /* default value */
   this->fsim_only = false;          /* flag to indicate fault simulation only */

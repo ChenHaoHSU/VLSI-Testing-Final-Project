@@ -157,6 +157,7 @@ private:
   int backtrack_limit_v1;
   int v2_loop_limit;
   int random_sim_num;
+  int random_sim_num_post;
 
   int total_attempt_num;
   bool fsim_only;                      /* flag to indicate fault simulation only */

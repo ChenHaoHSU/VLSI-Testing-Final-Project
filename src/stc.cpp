@@ -10,11 +10,11 @@
 #include "disjointSet.h"
 
 void ATPG::static_compression() {
+  fprintf(stderr, "# Static compression: (%lu)\n", vectors.size());
+
   random_simulation();
   int max_supernode = compatibility_graph();
-
   expand_vectors(max_supernode);
-
   random_simulation();
   random_fill_x();
   random_simulation();
@@ -202,9 +202,8 @@ int ATPG::compatibility_graph() {
   int max_supernode = *max_element(supernode_num_list.begin(), supernode_num_list.end());
 
   /* print msg */
-  fprintf(stderr, "# Compatibility graph:\n");
-  fprintf(stderr, "#   max supernode: %d\n", max_supernode);
-  fprintf(stderr, "#   drop %lu vector(s). (%lu)\n", vectors.size() - new_vectors.size(), new_vectors.size());
+  fprintf(stderr, "#   Compatibility graph: max = %d; drop %lu vector(s). (%lu)\n", 
+                  max_supernode, vectors.size() - new_vectors.size(), new_vectors.size());
 
   /* update vectors */
   vectors.clear();
@@ -229,7 +228,6 @@ bool ATPG::isCompatible(const string& vec1, const string& vec2) const {
 
 /* randomly fill all unknown values in vectors */
 void ATPG::random_fill_x() {
-  fprintf(stderr, "# Randomly fill x:\n");
   int i, len;
   len = cktin.size() + 1;
   double x_count = 0;
@@ -244,7 +242,8 @@ void ATPG::random_fill_x() {
       }
     }
   }
-  fprintf(stderr, "#   X ratio: %2.2f\n", 100 * (x_count / total_count));
+  fprintf(stderr, "#   Randomly fill x:\n");
+  fprintf(stderr, "#     x-ratio = %2.2f (%lu)\n", 100 * (x_count / total_count), vectors.size());
 }
 
 /* duplicate vectors n times */
@@ -259,8 +258,8 @@ void ATPG::expand_vectors(const size_t n) {
   }
   const size_t new_size = vectors.size();
   assert(new_size == ori_size * n);
-  fprintf(stderr, "# Expand vectors:\n");
-  fprintf(stderr, "#   %lu * %lu = %lu vector(s). (%lu)\n", ori_size, n, new_size, new_size);
+  fprintf(stderr, "#   Expand vectors:\n");
+  fprintf(stderr, "#     %lu * %lu = %lu vector(s). (%lu)\n", ori_size, n, new_size, new_size);
 }
 
 /* use tdfsim to drop useless vectors */
@@ -273,9 +272,9 @@ void ATPG::random_simulation()
   vector<bool> dropped(vectors.size(), false);
   iota(order.begin(), order.end(), 0);
 
-  fprintf(stderr, "# Random simulation:\n");
-  int drop_count, init_total_count;
-  init_total_count = vectors.size();
+  fprintf(stderr, "#   Random simulation:\n");
+  fprintf(stderr, "#    ");
+  int drop_count;
   for (iter = 0; iter < random_sim_num; ++iter) {
     drop_count = 0;
     if (iter == 0) {
@@ -300,10 +299,8 @@ void ATPG::random_simulation()
         }
       }
     }
-    init_total_count -= drop_count;
-    assert(init_total_count);
     if (drop_count > 0)
-      fprintf(stderr, "#   Iter %d: drop %d vector(s). (%d)\n", iter, drop_count, init_total_count);
+      fprintf(stderr, " i%d: %d;", iter, drop_count);
   }
 
   /* remove all useless vectors (dropped[i] == true => need to be dropped) */
@@ -314,5 +311,5 @@ void ATPG::random_simulation()
     }
   }
   vectors = compressed_vectors;
-  assert((int)vectors.size() == init_total_count);
+  fprintf(stderr, " (%lu)\n", vectors.size());
 }
