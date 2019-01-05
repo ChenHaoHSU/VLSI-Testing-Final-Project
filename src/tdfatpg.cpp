@@ -17,6 +17,13 @@ void ATPG::transition_delay_fault_atpg(void) {
   clock_t timer;
 
   timer = clock();
+  pre_process();
+  timer = clock() - timer;
+  #ifdef SHOW_TIME
+  fprintf(stderr, "# Pre-Process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  #endif
+
+  timer = clock();
   //rank_fault_by_scoap();
   rank_fault_by_detect();
   timer = clock() - timer;
@@ -33,8 +40,6 @@ void ATPG::transition_delay_fault_atpg(void) {
   #endif
 
   // random_pattern_generation(true);
-  // compatibility_graph();
-  // random_fill_x();
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
   timer = clock();
@@ -42,6 +47,13 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock() - timer;
   #ifdef SHOW_TIME
   fprintf(stderr, "# STC done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  #endif
+
+  timer = clock();
+  post_process();
+  timer = clock() - timer;
+  #ifdef SHOW_TIME
+  fprintf(stderr, "# Post-process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   #endif
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());

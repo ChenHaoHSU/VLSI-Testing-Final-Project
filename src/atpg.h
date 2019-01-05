@@ -154,6 +154,10 @@ private:
   
   /* orginally declared in tpgmain.c */
   int backtrack_limit;
+  int backtrack_limit_v1;
+  int v2_loop_limit;
+  int random_sim_num;
+
   int total_attempt_num;
   bool fsim_only;                      /* flag to indicate fault simulation only */
   bool tdfsim_only;                    /* flag to indicate tdfault simulation only */
@@ -269,8 +273,6 @@ private:
   wptr find_easiest_control_v1(const nptr);
   void random_pattern_generation(const bool use_unknown = false);
   
-  int backtrack_limit_v1;
-
   /* defined in tdfmedop.cpp */
   int tdf_medop_x(void);
   int tdf_medop_v2(const fptr, int&, LIFO&, string&, string&, const bool, const bool);
@@ -316,6 +318,12 @@ private:
   void try_pattern_gen(void);              /* iterate through each fault and try generate a pattern, 
                                               evaluate how good the pattern is */
   void display_scoap(void);                /* display scoap */
+
+  /* defined in process.cpp */
+  enum CASE { C17, C432, C499, C880, C1355, C1908, C2670, C3540, C5315, C6288, C7552, OTHER };
+  void pre_process();
+  CASE identify_case() const;
+  void post_process();
 
   vector<fptr> flist_ranked;               /* ranked fault list used to select faults */
   vector<int> detection_score;             /* store the "sum of scoap of faults" detected by the pattern 
@@ -388,16 +396,16 @@ private:
     string primary_vector;
   };
 
-  // For compatibility graph (static compression)
+  /* For compatibility graph (static compression) */
   class Edge {
   public:
     Edge() {}
     Edge(const int i, const int n1_, const int n2_): edge_idx(i), n1(n1_), n2(n2_) {}
 
-    int  edge_idx; // idx in vEdges;
-    int  n1; // idx in vNodes
-    int  n2; // idx in vNodes
-    int  nCommon; // number of common neighbors (excluding each other)
+    int  edge_idx; /* idx in vEdges */
+    int  n1;       /* idx in vNodes */
+    int  n2;       /* idx in vNodes */
+    int  nCommon;  /* number of common neighbors (excluding each other) */
   };
 
   class Node {
@@ -405,8 +413,9 @@ private:
     Node() {}
     Node(const int i): node_idx(i) {}
 
-    int             node_idx; // idx in vectors and also in vNodes; a node represents a vector in vectors.
-    map<int, int>   mNeighbors; // node_idx -> edge_idx
+    int             node_idx;   /* idx in vectors and also in vNodes; 
+                                   a node represents a vector in vectors */
+    map<int, int>   mNeighbors; /* node_idx -> edge_idx */
   };
 
   struct Edge_Cmp {

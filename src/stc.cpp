@@ -9,10 +9,9 @@
 #include "atpg.h"
 #include "disjointSet.h"
 
-#define RANDOM_SIMULATION_ITER_NUM  50
-
 void ATPG::static_compression() {
   random_simulation();
+  random_fill_x();
   int max_supernode = compatibility_graph();
 
   expand_vectors(max_supernode);
@@ -231,16 +230,22 @@ bool ATPG::isCompatible(const string& vec1, const string& vec2) const {
 
 /* randomly fill all unknown values in vectors */
 void ATPG::random_fill_x() {
+  fprintf(stderr, "# Randomly fill x:\n");
   int i, len;
   len = cktin.size() + 1;
+  double x_count = 0;
+  double total_count = 0;
   for (string& vec : vectors) {
     assert(vec.size() == cktin.size() + 1);
     for (i = 0; i < len; ++i) {
+      total_count += 1;
       if (vec[i] == '2') {
+        x_count += 1;
         vec[i] = (rand() & 01) ? '1' : '0';
       }
     }
   }
+  fprintf(stderr, "#   X ratio: %f\n", (x_count / total_count));
 }
 
 /* duplicate vectors n times */
@@ -272,14 +277,14 @@ void ATPG::random_simulation()
   fprintf(stderr, "# Random simulation:\n");
   int drop_count, init_total_count;
   init_total_count = vectors.size();
-  for (iter = 0; iter < RANDOM_SIMULATION_ITER_NUM; ++iter) {
+  for (iter = 0; iter < random_sim_num; ++iter) {
     drop_count = 0;
     if (iter == 0) {
       iota(order.begin(), order.end(), 0);
       reverse(order.begin(), order.end());
     } else if (iter == 1) {
       reverse(order.begin(), order.end());
-    } else if (iter == RANDOM_SIMULATION_ITER_NUM) {
+    } else if (iter == random_sim_num) {
       iota(order.begin(), order.end(), 0);
     } else {
       random_shuffle(order.begin(), order.end());
