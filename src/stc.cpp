@@ -11,7 +11,6 @@
 
 void ATPG::static_compression() {
   random_simulation();
-  random_fill_x();
   int max_supernode = compatibility_graph();
 
   expand_vectors(max_supernode);
@@ -245,7 +244,7 @@ void ATPG::random_fill_x() {
       }
     }
   }
-  fprintf(stderr, "#   X ratio: %f\n", (x_count / total_count));
+  fprintf(stderr, "#   X ratio: %2.2f\n", 100 * (x_count / total_count));
 }
 
 /* duplicate vectors n times */

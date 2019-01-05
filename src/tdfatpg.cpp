@@ -21,6 +21,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock() - timer;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Pre-Process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "=================\n");
   #endif
 
   timer = clock();
@@ -29,6 +30,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock() - timer;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Faults ranked. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "=================\n");
   #endif
 
   timer = clock();
@@ -37,6 +39,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock() - timer;
   #ifdef SHOW_TIME
   fprintf(stderr, "# MEDOP done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "=================\n");
   #endif
 
   // random_pattern_generation(true);
@@ -47,6 +50,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock() - timer;
   #ifdef SHOW_TIME
   fprintf(stderr, "# STC done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "=================\n");
   #endif
 
   timer = clock();
@@ -54,6 +58,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock() - timer;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Post-process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "=================\n");
   #endif
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());

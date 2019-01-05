@@ -13,8 +13,23 @@ void ATPG::pre_process() {
   switch (identify_case()) {
     case C17:
     case C432:
+      this->backtrack_limit = 500;
+      this->backtrack_limit_v1 = 100;
+      this->v2_loop_limit = 1000;
+      this->random_sim_num = 50;
+      break;
     case C499:
+      this->backtrack_limit = 500;
+      this->backtrack_limit_v1 = 100;
+      this->v2_loop_limit = 1000;
+      this->random_sim_num = 50;
+      break;
     case C880:
+      this->backtrack_limit = 500;
+      this->backtrack_limit_v1 = 100;
+      this->v2_loop_limit = 1000;
+      this->random_sim_num = 50;
+      break;
     case C1355:
     case C1908:
     case C2670:
