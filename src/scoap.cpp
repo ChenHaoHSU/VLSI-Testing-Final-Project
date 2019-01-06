@@ -197,6 +197,7 @@ void ATPG::rank_fault_by_detect(void)
 void ATPG::try_pattern_gen(void)
 {
   int current_detect_num = 0;
+  int current_drop_num = 0;
   int current_backtrack_num = 0;
   
   /* tune parameters !!! */
@@ -264,7 +265,7 @@ void ATPG::try_pattern_gen(void)
 
     /* evaluate how good the pattern is */
     if (test_found) {
-      tdfsim_a_vector(vectors.back(), current_detect_num, false);
+      tdfsim_a_vector(vectors.back(), current_detect_num, current_drop_num, false);
       // primary_fault->score = (double)detection_score.back() / detection_count.back();  
       size_t x_bit_count = 0;
       for (size_t i = 0; i < vectors.back().size(); ++i) {

@@ -1,5 +1,5 @@
 #include "atpg.h"
-void ATPG::print_PI_assignments()
+void ATPG::print_PI_assignments() const
 {
     int ncktin = cktin.size();
     cerr << "=========================" << endl;
@@ -9,7 +9,7 @@ void ATPG::print_PI_assignments()
     cerr << "=========================" << endl;
 }
 
-void ATPG::print_fault_description(fptr fault)
+void ATPG::print_fault_description(fptr fault) const
 {
     string type = (fault->fault_type == STR) ? "STR" : "STF";
     string node = fault->node->name;
@@ -48,7 +48,7 @@ void ATPG::initialize_all_assigned_flag()
     return;
 }
 
-string ATPG::extract_all_assigned_flag()
+string ATPG::extract_all_assigned_flag() const
 {
     int ncktin = cktin.size();
     string flags;
@@ -87,7 +87,7 @@ void ATPG::initialize_vector()
 
 /* extract_vector_v1 */
 /* extract a string from the circuit as v1 pattern */
-string ATPG::extract_vector_v1(const string& vec_v2)
+string ATPG::extract_vector_v1(const string& vec_v2) const
 {
     int ncktin = cktin.size();
     string vec_v1;
@@ -141,7 +141,7 @@ void ATPG::restore_vector_v1(const string& vec_v1)
 
 /* extract_vector_v2 */
 /* extract a string from the circuit as v2 pattern */
-string ATPG::extract_vector_v2(const string& accumulated)
+string ATPG::extract_vector_v2(const string& accumulated) const
 {
     int ncktin = cktin.size();
     string vec_v2;
@@ -221,7 +221,7 @@ bool ATPG::tdf_hard_constraint_v1(const fptr fault)
     } else { return true; }
 }
 
-bool ATPG::pattern_has_enough_x(const string& pattern)
+bool ATPG::pattern_has_enough_x(const string& pattern) const
 {
     int required_x_bit = (int)ceil(log2((double)detection_num));
     int x_bit_count = 0;
@@ -280,4 +280,29 @@ void ATPG::expand_pattern_rec_limited(vector<string>& patterns, string pattern, 
     } else {
         patterns.push_back(pattern);
     }
+}
+
+int ATPG::x_count(const string& pattern) const
+{
+    int ret = 0;
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        if (pattern[i] == '2') {
+            ++ret;
+        }
+    }
+    return ret;
+}
+
+int ATPG::detected_fault_num() {
+    generate_fault_list();
+    int total_num = 0;
+    int detect_num;
+    int drop_num;
+    for (const string& vec : vectors) {
+        detect_num = 0;
+        drop_num = 0;
+        tdfsim_a_vector(vec, detect_num, drop_num);
+        total_num += drop_num;
+    }
+    return total_num;
 }

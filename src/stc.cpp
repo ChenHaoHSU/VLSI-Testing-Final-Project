@@ -202,7 +202,8 @@ int ATPG::compatibility_graph() {
   int max_supernode = *max_element(supernode_num_list.begin(), supernode_num_list.end());
 
   /* print msg */
-  fprintf(stderr, "#   Compatibility graph: max = %d; drop %lu vector(s). (%lu)\n", 
+  fprintf(stderr, "#   Compatibility graph:\n");
+  fprintf(stderr, "#     max supernode = %d; drop %lu vector(s). (%lu)\n",
                   max_supernode, vectors.size() - new_vectors.size(), new_vectors.size());
 
   /* update vectors */
@@ -228,22 +229,27 @@ bool ATPG::isCompatible(const string& vec1, const string& vec2) const {
 
 /* randomly fill all unknown values in vectors */
 void ATPG::random_fill_x() {
-  int i, len;
+  int i, j, nvec, len;
+  nvec = vectors.size();
   len = cktin.size() + 1;
   double x_count = 0;
   double total_count = 0;
-  for (string& vec : vectors) {
+  for (i = 0; i < nvec; ++i) {
+    string& vec = vectors[i];
     assert(vec.size() == cktin.size() + 1);
-    for (i = 0; i < len; ++i) {
+    for (j = 0; j < len; ++j) {
       total_count += 1;
-      if (vec[i] == '2') {
+      if (vec[j] == '2') {
         x_count += 1;
-        vec[i] = (rand() & 01) ? '1' : '0';
+        vec[j] = (rand() & 01) ? '1' : '0';
       }
     }
   }
+
+  /* print msg */
   fprintf(stderr, "#   Randomly fill x:\n");
-  fprintf(stderr, "#     x-ratio = %2.2f (%lu)\n", 100 * (x_count / total_count), vectors.size());
+  fprintf(stderr, "#     x-ratio = %2.0f / %2.0f = %2.2f%% (%lu)\n",
+                   x_count, total_count, 100 * (x_count / total_count), vectors.size());
 }
 
 /* duplicate vectors n times */
@@ -258,6 +264,8 @@ void ATPG::expand_vectors(const size_t n) {
   }
   const size_t new_size = vectors.size();
   assert(new_size == ori_size * n);
+
+  /* print msg */
   fprintf(stderr, "#   Expand vectors:\n");
   fprintf(stderr, "#     %lu * %lu = %lu vector(s). (%lu)\n", ori_size, n, new_size, new_size);
 }
@@ -266,7 +274,9 @@ void ATPG::expand_vectors(const size_t n) {
 void ATPG::random_simulation()
 {
   int detect_num = 0;
+  int drop_num = 0;
   int iter;
+  int nprint = 0;
 
   vector<int> order(vectors.size());
   vector<bool> dropped(vectors.size(), false);
@@ -278,10 +288,18 @@ void ATPG::random_simulation()
   for (iter = 0; iter < random_sim_num; ++iter) {
     drop_count = 0;
     if (iter == 0) {
-      iota(order.begin(), order.end(), 0);
-      reverse(order.begin(), order.end());
+      if (stc_use_sorted) {
+        sorted_vector_order(order);
+      } else {
+        iota(order.begin(), order.end(), 0);
+        reverse(order.begin(), order.end());
+      }
     } else if (iter == 1) {
-      reverse(order.begin(), order.end());
+      if (stc_use_sorted) {
+        random_shuffle(order.begin(), order.end());
+      } else {
+        reverse(order.begin(), order.end());
+      }
     } else if (iter == random_sim_num) {
       iota(order.begin(), order.end(), 0);
     } else {
@@ -292,15 +310,20 @@ void ATPG::random_simulation()
     for (const int s : order) {
       if (!dropped[s]) {
         detect_num = 0;
-        tdfsim_a_vector(vectors[s], detect_num);
+        tdfsim_a_vector(vectors[s], detect_num, drop_num);
         if (detect_num == 0) {
           dropped[s] = true;
           ++drop_count;
         }
       }
     }
-    if (drop_count > 0)
+    if (drop_count > 0) {
       fprintf(stderr, " i%d: %d;", iter, drop_count);
+      if (++nprint >= 5) {
+        nprint = 0;
+        fprintf(stderr, "\n#    ");
+      }
+    }
   }
 
   /* remove all useless vectors (dropped[i] == true => need to be dropped) */
@@ -312,4 +335,41 @@ void ATPG::random_simulation()
   }
   vectors = compressed_vectors;
   fprintf(stderr, " (%lu)\n", vectors.size());
+}
+
+/* sort vectors by the number of detected faults */
+void ATPG::sorted_vector_order(vector<int>& order) {
+
+  /* generate a new fault list */
+  generate_fault_list();
+
+  /* calculate the number of detected faults of every vector */
+  vector<tuple<int, int, int> > detected_num_list; // (idx, detected_num, x_count)
+  detected_num_list.reserve(vectors.size());
+  int detect_num, drop_num;
+  int x_cnt;
+  for (int i = 0, n = vectors.size(); i < n; ++i) {
+    const string& vec = vectors[i];
+    detect_num = 0;
+    drop_num = 0;
+    tdfsim_a_vector(vec, detect_num, drop_num, false);
+    x_cnt = x_count(vec);
+    detected_num_list.emplace_back(i, detect_num, x_cnt);
+  }
+
+  assert(vectors.size() == detected_num_list.size());
+
+  /* sort vectors by the number of detected faults */
+  sort(detected_num_list.begin(), detected_num_list.end(),
+    [] (const tuple<int, int, int> t1, const tuple<int, int, int> t2) {
+      if (get<1>(t1) != get<1>(t2)) return get<1>(t1) > get<1>(t2);
+      else if (get<2>(t1) != get<2>(t2)) return get<2>(t1) > get<2>(t2);
+      else return get<0>(t1) > get<0>(t2);
+    });
+
+  /* restore to order */
+  order.clear();
+  for (const tuple<int, int, int>& t : detected_num_list) {
+    order.emplace_back(get<0>(t));
+  }
 }
