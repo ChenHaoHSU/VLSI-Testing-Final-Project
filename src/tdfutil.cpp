@@ -195,6 +195,32 @@ void ATPG::restore_vector_v2(const string& vec_v2)
     sim();
 }
 
+bool ATPG::tdf_hard_constraint_v1(const fptr fault)
+{
+    int nckt = sort_wlist.size();
+    for (int i = 0; i < nckt; i++) {
+        sort_wlist[i]->value = U;
+    }
+    
+    wptr w;
+    if (fault->io) {
+        w = fault->node->owire.front();
+    } else {
+        w = fault->node->iwire[fault->index];
+    }
+    
+    int if_initial_objective_reached = backward_imply(w, fault->fault_type);
+    
+    string must_vec;
+    must_vec.resize(cktin.size()+1, '2');
+    must_vec = extract_vector_v1(must_vec);
+    fault->primary_vector = must_vec;
+
+    if (if_initial_objective_reached == CONFLICT) {
+        return false;
+    } else { return true; }
+}
+
 bool ATPG::pattern_has_enough_x(const string& pattern)
 {
     int required_x_bit = (int)ceil(log2((double)detection_num));

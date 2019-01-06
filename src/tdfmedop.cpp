@@ -57,8 +57,10 @@ int ATPG::tdf_medop_x()
         tdf_vec.resize(cktin.size()+1, '2');
         d_tree_flag.resize(cktin.size(), '0');
         
+        bool not_violate_constraint = tdf_hard_constraint_v1(primary_fault);
+        
         /* main loop for finding primary fault v2-v1 pattern */
-        while (!test_found && (v2_loop_counter < v2_loop_limit)) {
+        while ((!test_found) && (v2_loop_counter < v2_loop_limit) && not_violate_constraint) {
             /* find v2 */
             if (next_is_v2) {
                 int find_v2 = tdf_medop_v2(primary_fault, current_backtrack_num, d_tree, tdf_vec, 

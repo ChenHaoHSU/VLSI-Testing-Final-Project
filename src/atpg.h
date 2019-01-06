@@ -296,6 +296,7 @@ private:
   void restore_vector_v1(const string&);
   string extract_vector_v2(const string&);
   void restore_vector_v2(const string&);
+  bool tdf_hard_constraint_v1(const fptr);
   bool pattern_has_enough_x(const string&);
   void expand_pattern(vector<string>&, const string&);
   void expand_pattern_rec(vector<string>&, string, char, size_t);
