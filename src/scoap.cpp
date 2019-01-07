@@ -169,19 +169,7 @@ void ATPG::calculate_scoap(void)
   return;
 }
 
-void ATPG::rank_fault_by_scoap(void)
-{
-  calculate_scoap();
-
-  sort(flist_ranked.begin(), flist_ranked.end(),
-      [&](const fptr& a, const fptr& b) {
-          return (a->scoap > b->scoap);
-      });
-
-  return;
-}
-
-void ATPG::rank_fault_by_detect(void)
+void ATPG::rank_fault(void)
 {
   calculate_scoap();
   try_pattern_gen();
@@ -197,10 +185,8 @@ void ATPG::rank_fault_by_detect(void)
 void ATPG::try_pattern_gen(void)
 {
   int current_detect_num = 0;
+  int current_drop_num = 0;
   int current_backtrack_num = 0;
-  
-  /* tune parameters !!! */
-  // int v2_loop_limit = 650;
   
   /* declare parameters */
   LIFO   d_tree;           // decision tree. must be clear in each outmost loop.
@@ -265,16 +251,20 @@ void ATPG::try_pattern_gen(void)
 
     /* evaluate how good the pattern is */
     if (test_found) {
-      tdfsim_a_vector(vectors.back(), current_detect_num, false);
-      // primary_fault->score = (double)detection_score.back() / detection_count.back();  
-      size_t x_bit_count = 0;
-      for (size_t i = 0; i < vectors.back().size(); ++i) {
-        if (vectors.back()[i] == '2') {
-            ++x_bit_count;
-        }
+      tdfsim_a_vector(vectors.back(), current_detect_num, current_drop_num, false);
+      int x_bit_count = x_count(vectors.back());
+      switch (rank_fault_method) {
+        case D_SCORE:
+          primary_fault->score = detection_score.back(); break;
+        case D_COUNT:
+          primary_fault->score = detection_count.back(); break;
+        case X_COUNT:
+          primary_fault->score = x_bit_count; break;
+        case SCOAP:
+          primary_fault->score = primary_fault->scoap; break;
+        default:
+          assert(0); break;
       }
-      primary_fault->score = detection_score.back(); // detection_count or detection_score
-      // primary_fault->score = x_bit_count;
       v2_loop_max_trial = (v2_loop_counter > v2_loop_max_trial) ? v2_loop_counter : v2_loop_max_trial;
     } else {
       primary_fault->score = INT_MIN;

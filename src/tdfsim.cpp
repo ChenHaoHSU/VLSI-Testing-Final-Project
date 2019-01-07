@@ -14,13 +14,14 @@ void ATPG::transition_delay_fault_simulation() {
   int i;
   int current_detect_num = 0;
   int total_detect_num = 0;
+  int current_drop_num = 0;
 
   // debug = 1;
 
   /* for every vector */
   for (i = vectors.size() - 1; i >= 0; i--) {
-    tdfsim_a_vector(vectors[i], current_detect_num);
-    total_detect_num += current_detect_num;
+    tdfsim_a_vector(vectors[i], current_detect_num, current_drop_num);
+    total_detect_num += current_drop_num;
     fprintf(stdout, "vector[%d] detects %d faults (%d)\n", i, current_detect_num, total_detect_num);
   }
 
@@ -33,7 +34,7 @@ void ATPG::transition_delay_fault_simulation() {
 }
 
 /* transition delay fault simulate a single test vector */
-void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const bool do_fault_drop) {
+void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, int& num_of_drop, const bool do_fault_drop) {
   
   wptr w,faulty_wire;
   /* array of 16 fptrs, which points to the 16 faults in a simulation packet  */
@@ -49,6 +50,7 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
   /* num_of_current_detect is used to keep track of the number of undetected
    * faults detected by this vector, initialize it to zero */
   num_of_current_detect = 0;
+  num_of_drop = 0;
 
   /* Keep track of the minimum wire index of 16 faults in a packet.
    * the start_wire_index is used to keep track of the
@@ -278,6 +280,7 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
           fptr_ele->detected_time += 1;
           num_of_current_detect += fptr_ele->eqv_fault_num;
           if (fptr_ele->detected_time >= detection_num) {
+            num_of_drop += 1;
             return true;
           }
           else {
@@ -294,8 +297,6 @@ void ATPG::tdfsim_a_vector(const string& vec, int& num_of_current_detect, const 
       flist_ranked.begin(), flist_ranked.end(),
       [&](const fptr fptr_ele){
         if (fptr_ele->detect == TRUE) {
-          fptr_ele->detected_time += 1;
-          num_of_current_detect += fptr_ele->eqv_fault_num;
           if (fptr_ele->detected_time >= detection_num) {
             return true;
           }

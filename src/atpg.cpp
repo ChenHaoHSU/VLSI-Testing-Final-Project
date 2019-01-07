@@ -15,12 +15,14 @@ ATPG::ATPG() {
   this->v2_loop_limit = 10;
   this->random_sim_num = 30;
   this->random_sim_num_post = 30;
+  this->stc_use_sorted = true;
 
   this->total_attempt_num = 1;      /* default value */
   this->fsim_only = false;          /* flag to indicate fault simulation only */
   this->tdfsim_only = false;        /* flag to indicate tdfault simulation only */
   this->compression = false;        /* flag to indicate test compression on */
   this->detection_num = 1;          /* number of detection */
+  this->rank_fault_method = D_SCORE;
 
   /* orginally assigned in input.c */
   this->debug = 0;                /* != 0 if debugging;  this is a switch of debug mode */

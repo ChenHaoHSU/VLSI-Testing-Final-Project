@@ -11,6 +11,7 @@
 int ATPG::tdf_medop_x()
 {
     int current_detect_num = 0;
+    int current_drop_num = 0;
     int total_backtrack_num = 0;
     int current_backtrack_num = 0;
     int aborted_fnum = 0;
@@ -144,7 +145,7 @@ int ATPG::tdf_medop_x()
             while (detect_time < detection_num) {
                 for (string pattern : expanded_patterns) {
                     vectors.emplace_back(pattern);
-                    tdfsim_a_vector(vectors.back(), current_detect_num);
+                    tdfsim_a_vector(vectors.back(), current_detect_num, current_drop_num);
                     if (++detect_time >= detection_num) break;
                 }
             }
