@@ -166,6 +166,8 @@ private:
   bool compression;                    /* flag to indicate test compression mode on */
   int detection_num;                   /* number of detection for "-ndet" option*/
   bool stc_use_sorted;
+  enum METHOD { D_SCORE, D_COUNT, X_COUNT, SCOAP };
+  METHOD rank_fault_method;
 
   /* orginally declared input.c */
   int debug;                           /* != 0 if debugging;  this is a switch of debug mode */
@@ -319,8 +321,7 @@ private:
   void calculate_cc(void);                 /* calculate controllability */
   void calculate_co(void);                 /* calculate obervability */
   void calculate_scoap(void);              /* calculate scoap of each fault */
-  void rank_fault_by_scoap(void);          /* rank faults by scoap */
-  void rank_fault_by_detect(void);         /* rank faults by detection score */
+  void rank_fault(void);                   /* rank faults by rank_fault_method */
   void try_pattern_gen(void);              /* iterate through each fault and try generate a pattern, 
                                               evaluate how good the pattern is */
   void display_scoap(void);                /* display scoap */

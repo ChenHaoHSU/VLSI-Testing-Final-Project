@@ -27,8 +27,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   #endif
 
   timer = clock();
-  //rank_fault_by_scoap();
-  rank_fault_by_detect();
+  rank_fault();
   timer = clock() - timer;
   total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME

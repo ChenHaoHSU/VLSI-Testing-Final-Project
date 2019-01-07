@@ -22,6 +22,7 @@ ATPG::ATPG() {
   this->tdfsim_only = false;        /* flag to indicate tdfault simulation only */
   this->compression = false;        /* flag to indicate test compression on */
   this->detection_num = 1;          /* number of detection */
+  this->rank_fault_method = D_SCORE;
 
   /* orginally assigned in input.c */
   this->debug = 0;                /* != 0 if debugging;  this is a switch of debug mode */

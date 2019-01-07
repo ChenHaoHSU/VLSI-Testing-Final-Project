@@ -21,6 +21,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
+      this->rank_fault_method   = D_SCORE;
       break;
     case C432:
       fprintf(stderr, "#   case: c432\n");
@@ -30,6 +31,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
+      this->rank_fault_method   = D_SCORE;
       break;
     case C499:
       fprintf(stderr, "#   case: c499\n");
@@ -39,6 +41,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = false;
+      this->rank_fault_method   = X_COUNT;
       break;
     case C880:
       fprintf(stderr, "#   case: c880\n");
@@ -48,6 +51,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
+      this->rank_fault_method   = X_COUNT;
       break;
     case C1355:
       fprintf(stderr, "#   case: c1355\n");
@@ -57,6 +61,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
+      this->rank_fault_method   = X_COUNT;
       break;
     case C1908:
       fprintf(stderr, "#   case: c1908\n");
@@ -66,6 +71,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
+      this->rank_fault_method   = D_SCORE;
       break;
     case C2670:
       fprintf(stderr, "#   case: c2670\n");
@@ -75,6 +81,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
+      this->rank_fault_method   = X_COUNT;
       break;
     case C3540:
       fprintf(stderr, "#   case: c3540\n");
@@ -84,6 +91,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
+      this->rank_fault_method   = X_COUNT;
       break;
     case C5315:
       fprintf(stderr, "#   case: c5315\n");
@@ -93,6 +101,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = false;
+      this->rank_fault_method   = D_SCORE;
       break;
     case C6288:
       fprintf(stderr, "#   case: c6288\n");
@@ -102,6 +111,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 20;
       this->random_sim_num_post = 20;
       this->stc_use_sorted      = false;
+      this->rank_fault_method   = D_COUNT;
       break;
     case C7552:
       fprintf(stderr, "#   case: c7552\n");
@@ -111,6 +121,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 20;
       this->random_sim_num_post = 20;
       this->stc_use_sorted      = false;
+      this->rank_fault_method   = D_SCORE;
       break;
     default:
       fprintf(stderr, "#   case: other\n");
@@ -120,6 +131,7 @@ void ATPG::pre_process() {
       this->random_sim_num      = 20;
       this->random_sim_num_post = 20;
       this->stc_use_sorted      = true;
+      this->rank_fault_method   = D_SCORE;
       break;
   }
 }
