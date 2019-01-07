@@ -18,6 +18,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = false;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
@@ -28,6 +29,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = false;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
@@ -38,6 +40,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = true;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = false;
@@ -48,6 +51,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = false;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
@@ -58,6 +62,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = false;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
@@ -68,6 +73,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = false;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
@@ -77,7 +83,8 @@ void ATPG::pre_process() {
       fprintf(stderr, "#   case: c2670\n");
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
-      this->v2_loop_limit       = 2000;
+      this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = false;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
@@ -88,6 +95,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = true;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
@@ -97,7 +105,8 @@ void ATPG::pre_process() {
       fprintf(stderr, "#   case: c5315\n");
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
-      this->v2_loop_limit       = 2000;
+      this->v2_loop_limit       = 1000;
+      this->v1_strict_check     = false;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = false;
@@ -107,7 +116,8 @@ void ATPG::pre_process() {
       fprintf(stderr, "#   case: c6288\n");
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
-      this->v2_loop_limit       = 20;
+      this->v2_loop_limit       = 8;
+      this->v1_strict_check     = true;
       this->random_sim_num      = 20;
       this->random_sim_num_post = 20;
       this->stc_use_sorted      = false;
@@ -118,16 +128,18 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 200;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 10;
+      this->v1_strict_check     = true;
       this->random_sim_num      = 20;
       this->random_sim_num_post = 20;
       this->stc_use_sorted      = false;
-      this->rank_fault_method   = D_SCORE;
+      this->rank_fault_method   = X_COUNT;
       break;
     default:
       fprintf(stderr, "#   case: other\n");
       this->backtrack_limit     = 200;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 10;
+      this->v1_strict_check     = false;
       this->random_sim_num      = 20;
       this->random_sim_num_post = 20;
       this->stc_use_sorted      = true;

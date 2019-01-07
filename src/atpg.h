@@ -156,6 +156,7 @@ private:
   int backtrack_limit;
   int backtrack_limit_v1;
   int v2_loop_limit;
+  bool v1_strict_check;
   int random_sim_num;
   int random_sim_num_post;
 
