@@ -17,6 +17,10 @@ void ATPG::transition_delay_fault_atpg(void) {
   clock_t timer;
   float total_time = 0.0;
 
+  fprintf(stderr, "# Compression: %d\n", compression);
+  fprintf(stderr, "# Ndet: %d\n", detection_num);
+  fprintf(stderr, "===============\n");
+
   timer = clock();
   pre_process();
   timer = clock() - timer;

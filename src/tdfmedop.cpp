@@ -88,7 +88,7 @@ int ATPG::tdf_medop_x()
 
         bool test_found_primary = test_found;
         
-        if (test_found && pattern_has_enough_x(tdf_vec)) { 
+        if (compression && test_found && pattern_has_enough_x(tdf_vec)) { 
             /* secondary fault */
             secondary_counter = 0;
             do {
