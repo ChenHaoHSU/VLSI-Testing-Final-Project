@@ -6,7 +6,7 @@
 /*           last update : 01/21/2018                                 */
 /**********************************************************************/
 
-// #define NDEBUG
+#define NDEBUG
 
 #include <cassert>
 #include <climits>
