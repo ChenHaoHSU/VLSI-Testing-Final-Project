@@ -218,7 +218,7 @@ void ATPG::post_process() {
   }
 
   /* do static compression if any good vector was found */
-  if (iter > 0) {
+  if (iter > 0 && compression) {
     random_sim_num = random_sim_num_post;
     random_simulation();
     // int max_supernode = compatibility_graph();
