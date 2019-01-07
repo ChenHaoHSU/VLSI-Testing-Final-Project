@@ -43,7 +43,7 @@ void ATPG::pre_process() {
       this->v1_strict_check     = true;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
-      this->stc_use_sorted      = false;
+      this->stc_use_sorted      = true;
       this->rank_fault_method   = X_COUNT;
       break;
     case C880:
