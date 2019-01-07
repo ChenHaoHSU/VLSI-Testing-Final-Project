@@ -226,7 +226,6 @@ bool ATPG::tdf_hard_constraint_v1(const fptr fault)
 bool ATPG::tdf_check_sticky_constraint_v1(const fptr fault, const string& vec_2, vector<wptr> fanin_cone_wlist)
 {
     int ncktin = cktin.size();
-    int nckt = sort_wlist.size();
     /* success the value from v2 candidate pattern */
     for (int i = 0; i < ncktin-1; i++) {
         switch(cktin[i+1]->value) {

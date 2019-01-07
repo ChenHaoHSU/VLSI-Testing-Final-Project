@@ -10,6 +10,7 @@
 #include "disjointSet.h"
 
 void ATPG::static_compression() {
+  if (!compression) return;
   fprintf(stderr, "# Static compression: (%lu)\n", vectors.size());
 
   random_simulation();

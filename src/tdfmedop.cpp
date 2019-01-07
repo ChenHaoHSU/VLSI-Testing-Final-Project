@@ -88,7 +88,7 @@ int ATPG::tdf_medop_x()
 
         bool test_found_primary = test_found;
         
-        if (test_found && pattern_has_enough_x(tdf_vec)) { 
+        if (compression && test_found && pattern_has_enough_x(tdf_vec)) { 
             /* secondary fault */
             secondary_counter = 0;
             do {
@@ -188,7 +188,7 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     restore_all_assigned_flag(flags);
     mark_propagate_tree(fault->node);
     
-    for (int i = 0; i < sort_wlist.size(); ++i) {
+    for (int i = 0, nckt = sort_wlist.size(); i < nckt; ++i) {
         sort_wlist[i]->value_v1 = U;
     }
     
