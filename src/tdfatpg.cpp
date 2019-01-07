@@ -42,7 +42,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# MEDOP done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
-  fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
+  // fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
   fprintf(stderr, "===============\n");
   #endif
 
@@ -54,7 +54,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# STC done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
-  fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
+  // fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
   fprintf(stderr, "===============\n");
   #endif
 
@@ -64,7 +64,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Post-process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
-  fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
+  // fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
   fprintf(stderr, "===============\n");
   #endif
 
