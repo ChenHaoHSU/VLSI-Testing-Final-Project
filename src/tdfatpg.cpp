@@ -15,19 +15,21 @@
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
   clock_t timer;
+  float total_time = 0.0;
 
   timer = clock();
   pre_process();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Pre-process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   fprintf(stderr, "===============\n");
   #endif
 
   timer = clock();
-  //rank_fault_by_scoap();
-  rank_fault_by_detect();
+  rank_fault();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Faults ranked. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   fprintf(stderr, "===============\n");
@@ -37,8 +39,10 @@ void ATPG::transition_delay_fault_atpg(void) {
   //tdf_podem_x();
   tdf_medop_x();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# MEDOP done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
   fprintf(stderr, "===============\n");
   #endif
 
@@ -47,20 +51,25 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock();
   static_compression();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# STC done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
   fprintf(stderr, "===============\n");
   #endif
 
   timer = clock();
   post_process();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Post-process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
+  fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
   fprintf(stderr, "===============\n");
   #endif
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
+  fprintf(stderr, "# total runtime = %f sec(s)\n", total_time);
   display_test_patterns();
   // display_undetect();
 }
@@ -76,6 +85,7 @@ void ATPG::tdf_podem_x()
   int no_of_aborted_faults = 0;
   int no_of_redundant_faults = 0;
   int no_of_calls = 0;
+  int drop_num = 0;
 
   fptr fault_under_test = select_primary_fault();
 
@@ -90,7 +100,7 @@ void ATPG::tdf_podem_x()
         /*by defect, we want only one pattern per fault */
         /*run a fault simulation, drop ALL detected faults */
         if (total_attempt_num == 1) {
-          tdfsim_a_vector(vec, current_detect_num);
+          tdfsim_a_vector(vec, current_detect_num, drop_num);
           total_detect_num += current_detect_num;
         }
         /* If we want mutiple petterns per fault,
@@ -150,15 +160,6 @@ ATPG::fptr ATPG::select_primary_fault_by_order()
 /* select a primary fault for podem */
 ATPG::fptr ATPG::select_primary_fault()
 {
-  /*
-  fptr fault_selected;
-  for (fptr fptr_ele: flist_undetect) {
-    if (!fptr_ele->test_tried) {
-      fault_selected = fptr_ele;
-      return fault_selected;
-    }
-  } */
-  
   fptr fault_selected;
   for (fptr fptr_ele: flist_ranked) {
     if (!fptr_ele->test_tried) {
@@ -179,23 +180,25 @@ ATPG::fptr ATPG::select_secondary_fault()
   DYNAMIC_TYPE dtype = RANDOM;
 
   /* if wfmap is not constructed, construct it first */
+  /*
   std::pair<fptr, fptr> empty_fpair;
   if (wfmap.empty()) {
     for (fptr f: flist_undetect) {
       if (f->io == GO) {
-          if (!wfmap.count(std::pair<nptr, short>(f->node, -1)))
-            wfmap[std::pair<nptr, short>(f->node, -1)] = empty_fpair;
-          if (f->fault_type == STUCK0) wfmap[std::pair<nptr, short>(f->node, -1)].first = f;
-          else wfmap[std::pair<nptr, short>(f->node, -1)].second = f;
+        if (!wfmap.count(std::pair<nptr, short>(f->node, -1)))
+          wfmap[std::pair<nptr, short>(f->node, -1)] = empty_fpair;
+        if (f->fault_type == STUCK0) wfmap[std::pair<nptr, short>(f->node, -1)].first = f;
+        else wfmap[std::pair<nptr, short>(f->node, -1)].second = f;
       }
       else {
-          if (!wfmap.count(std::pair<nptr, short>(f->node, f->index)))
-            wfmap[std::pair<nptr, short>(f->node, f->index)] = empty_fpair;
-          if (f->fault_type == STUCK0) wfmap[std::pair<nptr, short>(f->node, f->index)].first = f;
-          else wfmap[std::pair<nptr, short>(f->node, f->index)].second = f;
+        if (!wfmap.count(std::pair<nptr, short>(f->node, f->index)))
+          wfmap[std::pair<nptr, short>(f->node, f->index)] = empty_fpair;
+        if (f->fault_type == STUCK0) wfmap[std::pair<nptr, short>(f->node, f->index)].first = f;
+        else wfmap[std::pair<nptr, short>(f->node, f->index)].second = f;
       }
     }
   }
+  */
 
   /* check if there is any PI = U. if not, return nullptr */
   bool have_u = false;

@@ -156,6 +156,7 @@ private:
   int backtrack_limit;
   int backtrack_limit_v1;
   int v2_loop_limit;
+  bool v1_strict_check;
   int random_sim_num;
   int random_sim_num_post;
 
@@ -165,6 +166,9 @@ private:
   bool tdfatpg_only;                   /* flag to indicate tdfault atpg only */
   bool compression;                    /* flag to indicate test compression mode on */
   int detection_num;                   /* number of detection for "-ndet" option*/
+  bool stc_use_sorted;
+  enum METHOD { D_SCORE, D_COUNT, X_COUNT, SCOAP };
+  METHOD rank_fault_method;
 
   /* orginally declared input.c */
   int debug;                           /* != 0 if debugging;  this is a switch of debug mode */
@@ -253,7 +257,7 @@ private:
   void display_sort_wlist() const;
 
   /* defined in tdfsim.cpp */
-  void tdfsim_a_vector(const string& vec, int& num_of_current_detect, const bool do_fault_drop = true);
+  void tdfsim_a_vector(const string& vec, int& num_of_current_detect, int& num_of_drop, const bool do_fault_drop = true);
   void tdf_inject_fault_value(const wptr, const int&, const int&);
   wptr tdf_get_faulty_wire(const fptr, int&);
   
@@ -264,7 +268,7 @@ private:
   fptr select_secondary_fault(void);        /* select a secondary fault for podem_x */
   int tdf_podem_v1(const fptr);             /* generate test vector 1, considering fault/LOS constraints */
   int tdf_podem_v2(const fptr, int&);       /* generate test vector 2, injection/activation/propagation */
-  void tdf_podem_x(void);                    /* dynamic test compression by podem-x */
+  void tdf_podem_x(void);                   /* dynamic test compression by podem-x */
   int tdf_backtrace(const wptr, const int&);
   int tdf_set_uniquely_implied_value(const fptr fault);
   int tdf_backward_imply(const wptr current_wire, const int& desired_logic_value);
@@ -286,41 +290,43 @@ private:
   wptr find_easiest_control_scoap(const nptr, const int);
   
   /* defined in tdfutil.cpp */
-  void print_PI_assignments();
-  void print_fault_description(fptr);
+  void print_PI_assignments() const;
+  void print_fault_description(fptr) const;
   void initialize_fault_primary_record();
   void initialize_all_assigned_flag();
-  string extract_all_assigned_flag();
+  string extract_all_assigned_flag() const;
   void restore_all_assigned_flag(const string&);
   void initialize_vector();
-  string extract_vector_v1(const string&);
+  string extract_vector_v1(const string&) const;
   void restore_vector_v1(const string&);
-  string extract_vector_v2(const string&);
+  string extract_vector_v2(const string&) const;
   void restore_vector_v2(const string&);
   bool tdf_hard_constraint_v1(const fptr);
   bool tdf_check_sticky_constraint_v1(const fptr, const string&, vector<wptr>);
   bool tdf_set_sticky_constraint_v1(const fptr);
   bool sticky_backward_imply(const wptr, const int&);
-  bool pattern_has_enough_x(const string&);
+  bool pattern_has_enough_x(const string&) const;
   void expand_pattern(vector<string>&, const string&);
   void expand_pattern_rec(vector<string>&, string, char, size_t);
   void expand_pattern_rec_limited(vector<string>&, string, char, size_t, size_t);
+  int x_count(const string&) const;
+  int detected_fault_num();
 
   /* defined in stc.cpp */
-  void static_compression(void);           /* static test compression */
-  int compatibility_graph();               /* Tseng-Siewiorek algorithm: solve minimum clique 
-                                              partition problem on compatibility graphs */
-  void random_fill_x();                    /* randomly fill all unknown values in vectors */
+  void static_compression();                             /* static test compression */
+  int compatibility_graph();                             /* Tseng-Siewiorek algorithm: solve minimum clique 
+                                                            partition problem on compatibility graphs */
+  void random_fill_x();                                  /* randomly fill all unknown values in vectors */
   bool isCompatible(const string&, const string&) const;
-  void random_simulation();                /* use tdfsim to drop useless vectors */
-  void expand_vectors(const size_t);       /* duplicate vectors n times */
+  void random_simulation();                              /* use tdfsim to drop useless vectors */
+  void expand_vectors(const size_t);                     /* duplicate vectors n times */
+  void sorted_vector_order(vector<int>& order);          /* sort vectors by the number of detected faults */
 
   /* defined in scoap.cpp */
   void calculate_cc(void);                 /* calculate controllability */
   void calculate_co(void);                 /* calculate obervability */
   void calculate_scoap(void);              /* calculate scoap of each fault */
-  void rank_fault_by_scoap(void);          /* rank faults by scoap */
-  void rank_fault_by_detect(void);         /* rank faults by detection score */
+  void rank_fault(void);                   /* rank faults by rank_fault_method */
   void try_pattern_gen(void);              /* iterate through each fault and try generate a pattern, 
                                               evaluate how good the pattern is */
   void display_scoap(void);                /* display scoap */
@@ -328,8 +334,8 @@ private:
   /* defined in process.cpp */
   enum CASE { C17, C432, C499, C880, C1355, C1908, C2670, C3540, C5315, C6288, C7552, OTHER };
   void pre_process();
-  CASE identify_case() const;
   void post_process();
+  CASE identify_case() const;
 
   vector<fptr> flist_ranked;               /* ranked fault list used to select faults */
   vector<int> detection_score;             /* store the "sum of scoap of faults" detected by the pattern 

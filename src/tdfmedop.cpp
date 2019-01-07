@@ -11,6 +11,7 @@
 int ATPG::tdf_medop_x()
 {
     int current_detect_num = 0;
+    int current_drop_num = 0;
     int total_backtrack_num = 0;
     int current_backtrack_num = 0;
     int aborted_fnum = 0;
@@ -144,7 +145,7 @@ int ATPG::tdf_medop_x()
             while (detect_time < detection_num) {
                 for (string pattern : expanded_patterns) {
                     vectors.emplace_back(pattern);
-                    tdfsim_a_vector(vectors.back(), current_detect_num);
+                    tdfsim_a_vector(vectors.back(), current_detect_num, current_drop_num);
                     if (++detect_time >= detection_num) break;
                 }
             }
@@ -187,20 +188,23 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     restore_all_assigned_flag(flags);
     mark_propagate_tree(fault->node);
     
-    for (int i = 0; i < sort_wlist.size(); ++i) {
-        sort_wlist[i]->value_v1 = U;
-    }
-    
-    tdf_set_sticky_constraint_v1(fault);
-    
     vector<wptr> fanin_cone_wlist;
-    faulty_w = sort_wlist[fault->to_swlist];
-    mark_fanin_cone(faulty_w, fanin_cone_wlist);
-    for (wptr w : fanin_cone_wlist) {
-        w->flag &= ~MARKED2;
+    if (v1_strict_check) {
+        int nckt = sort_wlist.size();
+        for (int i = 0; i < nckt; ++i) {
+            sort_wlist[i]->value_v1 = U;
+        }
+
+        tdf_set_sticky_constraint_v1(fault);
+
+        faulty_w = sort_wlist[fault->to_swlist];
+        mark_fanin_cone(faulty_w, fanin_cone_wlist);
+        for (wptr w : fanin_cone_wlist) {
+            w->flag &= ~MARKED2;
+        }
+        
+        tdf_check_sticky_constraint_v1(fault, assignments, fanin_cone_wlist);
     }
-    
-    tdf_check_sticky_constraint_v1(fault, assignments, fanin_cone_wlist);
     
     /* initial state */
     find_test = false;
@@ -282,10 +286,12 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
                 find_test = true;
             }
         }
-        if (!tdf_check_sticky_constraint_v1(fault, assignments, fanin_cone_wlist)) {
-            //cerr << "findtest is ffffffffff" << endl;
-            //cerr << extract_vector_v2(assignments) << endl;
-            find_test = false;
+        if (v1_strict_check) {
+            if (!tdf_check_sticky_constraint_v1(fault, assignments, fanin_cone_wlist)) {
+                //cerr << "findtest is ffffffffff" << endl;
+                //cerr << extract_vector_v2(assignments) << endl;
+                find_test = false;
+            }
         }
     } // while (three conditions)
         

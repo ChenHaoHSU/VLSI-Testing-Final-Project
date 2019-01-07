@@ -172,3 +172,54 @@ void ATPG::evaluate_v1(nptr n) {
     }
     return;
 }/* end of evaluate */
+
+void ATPG::evaluate_v1c2(nptr n) {
+    int old_value, new_value;
+    int i, nin;
+
+    old_value = n->owire.front()->value_v1;
+
+    /* decompose a multiple-input gate into multiple levels of two-input gates
+     * then look up the truth table of each two-input gate
+     */
+    nin = n->iwire.size();
+    switch(n->type) {
+        case AND:
+        case BUF:
+        case NAND:
+            new_value = 1;
+            for (i = 0; i < nin; i++) {
+                new_value = ANDTABLE[n->iwire[i]->value_v1][new_value];
+            }
+            if (n->type == NAND) {
+                new_value = INV[new_value];
+            }
+            break;
+        case OR:
+        case NOR:
+            new_value = 0;
+            for (i = 0; i < nin; i++) {
+                new_value = ORTABLE[n->iwire[i]->value_v1][new_value];
+            }
+            if (n->type == NOR) {
+                new_value = INV[new_value];
+            }
+            break;
+        case NOT:
+            new_value = INV[n->iwire.front()->value_v1];
+            break;
+        case XOR:
+            new_value = XORTABLE[n->iwire[0]->value_v1][n->iwire[1]->value_v1];
+            break;
+        case EQV:
+            new_value =INV[(XORTABLE[n->iwire[0]->value_v1][n->iwire[1]->value_v1])];
+            break;
+        default:
+            new_value = 0;
+    }
+    if (old_value != new_value) {
+        n->owire.front()->flag |= CHANGED2;
+        n->owire.front()->value_v1 = new_value;
+    }
+    return;
+}/* end of evaluate */
