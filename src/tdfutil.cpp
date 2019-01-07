@@ -221,6 +221,135 @@ bool ATPG::tdf_hard_constraint_v1(const fptr fault)
     } else { return true; }
 }
 
+bool ATPG::tdf_check_sticky_constraint_v1(const fptr fault, const string& vec_2, vector<wptr> fanin_cone_wlist)
+{
+    int ncktin = cktin.size();
+    int nckt = sort_wlist.size();
+    /* success the value from v2 candidate pattern */
+    for (int i = 0; i < ncktin-1; i++) {
+        switch(cktin[i+1]->value) {
+            case 0:
+            case B:
+                cktin[i]->value_v1 = 0;
+                break;
+            case 1:
+            case D:
+                cktin[i]->value_v1 = 1;
+                break;
+            case U:
+                cktin[i]->value_v1 = U;
+                break;
+        }
+        cktin[i]->flag |= CHANGED2;
+    }
+    if (cktin[ncktin-1]->value_v1 != ctoi(vec_2[ncktin-1])) {
+        cktin[ncktin-1]->value_v1 = ctoi(vec_2[ncktin-1]);
+        cktin[ncktin-1]->flag |= CHANGED2;
+    }
+
+    /* partial sim */
+    auto partial_sim = [&] (vector<wptr> &wlist) -> void {
+        for (int i = 0, nwire = wlist.size(); i < nwire; ++i) {
+            if (wlist[i]->flag & INPUT) continue;
+            evaluate_v1c2(wlist[i]->inode.front());
+        }
+        return;
+    };
+    partial_sim(fanin_cone_wlist);
+    
+    /* check */
+    for (int i = 0, nwire = fanin_cone_wlist.size(); i < nwire; ++i) {
+        int stick_value = fanin_cone_wlist[i]->stick_v1;
+        int current_value = fanin_cone_wlist[i]->value_v1;
+        if (((current_value == 0) && (stick_value == 1)) || ((current_value == 1) && (stick_value == 0))) {
+            //cerr << fanin_cone_wlist[i]->name << " must be " << fanin_cone_wlist[i]->stick_v1 << " but " << fanin_cone_wlist[i]->value_v1 << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ATPG::tdf_set_sticky_constraint_v1(const fptr fault)
+{
+    int nckt = sort_wlist.size();
+    for (int i = 0; i < nckt; i++) {
+        sort_wlist[i]->stick_v1 = U;
+    }
+    
+    wptr w;
+    if (fault->io) {
+        w = fault->node->owire.front();
+    } else {
+        w = fault->node->iwire[fault->index];
+    }
+    
+    int if_initial_objective_reached = sticky_backward_imply(w, fault->fault_type);
+
+    if (if_initial_objective_reached == CONFLICT) {
+        return false;
+    } else { return true; }
+}
+
+/* sticky_backward_imply */
+/* stick the v1 constraint in the circuit to accelerate v2 generation */
+bool ATPG::sticky_backward_imply(const wptr w, const int& desired_logic_value) {
+    int nin = w->inode.front()->iwire.size();
+    bool tf = true;
+
+    if (w->stick_v1 != U &&  
+        w->stick_v1 != desired_logic_value) { 
+        return false;
+    }
+    w->stick_v1 = desired_logic_value;
+
+    if (!(w->flag & INPUT)) {
+        switch (w->inode.front()->type) {
+
+        case NOT:
+            tf = sticky_backward_imply(w->inode.front()->iwire.front(), (desired_logic_value ^ 1));
+            if (!tf) return false;
+            break;
+        case NAND:
+            if (desired_logic_value == 0) {
+                for (int i = 0; i < nin; i++) {
+                    tf = sticky_backward_imply(w->inode.front()->iwire[i], 1);
+                    if (!tf) return false;
+                }
+            }
+            break;
+        case AND:
+            if (desired_logic_value == 1) {
+                for (int i = 0; i < nin; i++) {
+                    tf = sticky_backward_imply(w->inode.front()->iwire[i], 1);
+                    if (!tf) return false;
+                }
+            }
+            break;
+        case OR:
+            if (desired_logic_value == 0) {
+                for (int i = 0; i < nin; i++) {
+                    tf = sticky_backward_imply(w->inode.front()->iwire[i], 0);
+                    if (!tf) return false;
+                }
+            }
+            break;
+        case NOR:
+            if (desired_logic_value == 1) {
+                for (int i = 0; i < nin; i++) {
+                    tf = sticky_backward_imply(w->inode.front()->iwire[i], 0);
+                    if (!tf) return false;
+                }
+            }
+            break;
+        case BUF:
+            tf = sticky_backward_imply(w->inode.front()->iwire.front(),desired_logic_value);
+            if (!tf) return false;
+            break;
+        }
+    }
+    return tf;
+}
+
 bool ATPG::pattern_has_enough_x(const string& pattern)
 {
     int required_x_bit = (int)ceil(log2((double)detection_num));

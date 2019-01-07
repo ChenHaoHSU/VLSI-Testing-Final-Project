@@ -222,6 +222,7 @@ void ATPG::try_pattern_gen(void)
   primary_fault = select_primary_fault_by_order();
   
   while (primary_fault != nullptr) {
+               print_fault_description(primary_fault);
     /* test this primary fault */
     /* initialize the controlling boolean parameters */
     test_found = false;

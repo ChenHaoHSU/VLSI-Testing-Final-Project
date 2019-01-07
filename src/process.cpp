@@ -65,7 +65,7 @@ void ATPG::pre_process() {
       fprintf(stderr, "#   case: c2670\n");
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
-      this->v2_loop_limit       = 1000;
+      this->v2_loop_limit       = 2000;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       break;
@@ -81,7 +81,7 @@ void ATPG::pre_process() {
       fprintf(stderr, "#   case: c5315\n");
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
-      this->v2_loop_limit       = 1000;
+      this->v2_loop_limit       = 2000;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       break;
@@ -89,7 +89,7 @@ void ATPG::pre_process() {
       fprintf(stderr, "#   case: c6288\n");
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
-      this->v2_loop_limit       = 8;
+      this->v2_loop_limit       = 20;
       this->random_sim_num      = 20;
       this->random_sim_num_post = 20;
       break;

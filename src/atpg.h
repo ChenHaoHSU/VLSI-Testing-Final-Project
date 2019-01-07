@@ -199,6 +199,7 @@ private:
   void sim(void);
   void evaluate(nptr);
   void evaluate_v1(nptr);
+  void evaluate_v1c2(nptr);
   int ctoi(const char&);
   
   /* orginally declared in faultsim.c */
@@ -297,6 +298,9 @@ private:
   string extract_vector_v2(const string&);
   void restore_vector_v2(const string&);
   bool tdf_hard_constraint_v1(const fptr);
+  bool tdf_check_sticky_constraint_v1(const fptr, const string&, vector<wptr>);
+  bool tdf_set_sticky_constraint_v1(const fptr);
+  bool sticky_backward_imply(const wptr, const int&);
   bool pattern_has_enough_x(const string&);
   void expand_pattern(vector<string>&, const string&);
   void expand_pattern_rec(vector<string>&, string, char, size_t);
@@ -356,6 +360,7 @@ private:
     int fault_flag;            /* indicates the fault-injected bit position, for pfedfs */
     int wlist_index;           /* index into the sorted_wlist array */
     int value_v1;
+    int stick_v1;
 
     int cc0;                   /* 0-controllability in SCOAP */
     int cc1;                   /* 1-controllability in SCOAP */

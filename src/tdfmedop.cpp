@@ -187,6 +187,21 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     restore_all_assigned_flag(flags);
     mark_propagate_tree(fault->node);
     
+    for (int i = 0; i < sort_wlist.size(); ++i) {
+        sort_wlist[i]->value_v1 = U;
+    }
+    
+    tdf_set_sticky_constraint_v1(fault);
+    
+    vector<wptr> fanin_cone_wlist;
+    faulty_w = sort_wlist[fault->to_swlist];
+    mark_fanin_cone(faulty_w, fanin_cone_wlist);
+    for (wptr w : fanin_cone_wlist) {
+        w->flag &= ~MARKED2;
+    }
+    
+    tdf_check_sticky_constraint_v1(fault, assignments, fanin_cone_wlist);
+    
     /* initial state */
     find_test = false;
     no_test = false;
@@ -267,6 +282,11 @@ int ATPG::tdf_medop_v2(const fptr fault, int& current_backtrack_num, LIFO& d_tre
                 find_test = true;
             }
         }
+        if (!tdf_check_sticky_constraint_v1(fault, assignments, fanin_cone_wlist)) {
+            //cerr << "findtest is ffffffffff" << endl;
+            //cerr << extract_vector_v2(assignments) << endl;
+            find_test = false;
+        }
     } // while (three conditions)
         
     /* Before exiting tdf_medop_v2, some information should be updated. */
@@ -317,7 +337,7 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
     vector<wptr> fanin_cone_wlist;
     mark_fanin_cone(faulty_w, fanin_cone_wlist);
     for (wptr w : fanin_cone_wlist) {
-        w->flag &= ~MARKED;
+        w->flag &= ~MARKED2;
     }
     
     /* define partial sim */
@@ -385,7 +405,7 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
 
     /* Before exiting tdf_medop_v1, some information should be cleared */
     for (int i = 0; i < ncktin; ++i) {
-        cktin[i]->flag &= ~MARKED;
+        cktin[i]->flag &= ~MARKED2;
         cktin[i]->flag &= ~CHANGED;
         cktin[i]->flag &= ~ALL_ASSIGNED;
     }
@@ -401,11 +421,11 @@ int ATPG::tdf_medop_v1(const fptr fault, int& current_backtrack_num, LIFO& d_tre
 }
 
 void ATPG::mark_fanin_cone(const wptr w, vector<wptr> &fanin_cone_wlist) {
-    if (w->flag & MARKED) {
+    if (w->flag & MARKED2) {
         return;
     }
     int i, j, ninode, niwire;
-    w->flag |= MARKED;
+    w->flag |= MARKED2;
     for (i = 0, ninode = w->inode.size(); i < ninode; ++i) {
         for (j = 0, niwire = w->inode[i]->iwire.size(); j < niwire; ++j) {
             mark_fanin_cone(w->inode[i]->iwire[j], fanin_cone_wlist);
