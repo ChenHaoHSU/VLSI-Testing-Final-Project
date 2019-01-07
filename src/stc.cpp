@@ -20,7 +20,7 @@ void ATPG::static_compression() {
   random_simulation();
   int max_supernode = compatibility_graph();
   expand_vectors(max_supernode);
-  random_simulation();
+  // random_simulation();
   random_fill_x();
   random_simulation();
 }
