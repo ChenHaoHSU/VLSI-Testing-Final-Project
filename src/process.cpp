@@ -40,7 +40,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
-      this->v1_strict_check     = false;
+      this->v1_strict_check     = true;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = false;
@@ -95,7 +95,7 @@ void ATPG::pre_process() {
       this->backtrack_limit     = 500;
       this->backtrack_limit_v1  = 100;
       this->v2_loop_limit       = 1000;
-      this->v1_strict_check     = false;
+      this->v1_strict_check     = true;
       this->random_sim_num      = 50;
       this->random_sim_num_post = 50;
       this->stc_use_sorted      = true;
