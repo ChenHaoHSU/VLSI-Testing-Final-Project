@@ -218,32 +218,34 @@ bool ATPG::tdf_hard_constraint_v1(const fptr fault)
 
     if (if_initial_objective_reached == CONFLICT) {
         return false;
-    } else { return true; }
+    } else { 
+        return true; 
+    }
 }
 
 bool ATPG::pattern_has_enough_x(const string& pattern) const
 {
     int required_x_bit = (int)ceil(log2((double)detection_num));
-    int x_bit_count = 0;
+    int x_bit_count = x_count(pattern);
 
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        if (pattern[i] == '2') {
-            ++x_bit_count;
-        }
-    }
+    // for (size_t i = 0; i < pattern.size(); ++i) {
+    //     if (pattern[i] == '2') {
+    //         ++x_bit_count;
+    //     }
+    // }
 
     return (x_bit_count > required_x_bit);
 }
 
 void ATPG::expand_pattern(vector<string>& expanded_patterns, const string& pattern)
 {
-    int x_bit_count = 0;
+    int x_bit_count = x_count(pattern);
 
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        if (pattern[i] == '2') {
-            ++x_bit_count;
-        }
-    }
+    // for (size_t i = 0; i < pattern.size(); ++i) {
+    //     if (pattern[i] == '2') {
+    //         ++x_bit_count;
+    //     }
+    // }
 
     size_t pos = pattern.find_first_of('2');
     if (x_bit_count <= 3 && pos != string::npos) {

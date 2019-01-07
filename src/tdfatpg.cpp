@@ -15,10 +15,12 @@
 void ATPG::transition_delay_fault_atpg(void) {
   srand(0); // what's your lucky number?
   clock_t timer;
+  float total_time = 0.0;
 
   timer = clock();
   pre_process();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Pre-process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   fprintf(stderr, "===============\n");
@@ -28,6 +30,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   //rank_fault_by_scoap();
   rank_fault_by_detect();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Faults ranked. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   fprintf(stderr, "===============\n");
@@ -37,6 +40,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   //tdf_podem_x();
   tdf_medop_x();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# MEDOP done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
@@ -48,6 +52,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock();
   static_compression();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# STC done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
@@ -57,6 +62,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   timer = clock();
   post_process();
   timer = clock() - timer;
+  total_time += (float)timer/CLOCKS_PER_SEC;
   #ifdef SHOW_TIME
   fprintf(stderr, "# Post-process done. Time: %f sec(s)\n", (float)timer/CLOCKS_PER_SEC);
   fprintf(stderr, "# number of detected faults = %d\n", detected_fault_num());
@@ -64,6 +70,7 @@ void ATPG::transition_delay_fault_atpg(void) {
   #endif
 
   fprintf(stderr, "# number of test patterns = %lu\n", vectors.size());
+  fprintf(stderr, "# total runtime = %f sec(s)\n", total_time);
   display_test_patterns();
   // display_undetect();
 }
@@ -147,21 +154,13 @@ ATPG::fptr ATPG::select_primary_fault_by_order()
       return fault_selected;
     }
   }
+
   return nullptr;
 }
 
 /* select a primary fault for podem */
 ATPG::fptr ATPG::select_primary_fault()
 {
-  /*
-  fptr fault_selected;
-  for (fptr fptr_ele: flist_undetect) {
-    if (!fptr_ele->test_tried) {
-      fault_selected = fptr_ele;
-      return fault_selected;
-    }
-  } */
-  
   fptr fault_selected;
   for (fptr fptr_ele: flist_ranked) {
     if (!fptr_ele->test_tried) {
@@ -182,6 +181,7 @@ ATPG::fptr ATPG::select_secondary_fault()
   DYNAMIC_TYPE dtype = RANDOM;
 
   /* if wfmap is not constructed, construct it first */
+  /*
   std::pair<fptr, fptr> empty_fpair;
   if (wfmap.empty()) {
     for (fptr f: flist_undetect) {
@@ -199,6 +199,7 @@ ATPG::fptr ATPG::select_secondary_fault()
       }
     }
   }
+  */
 
   /* check if there is any PI = U. if not, return nullptr */
   bool have_u = false;
