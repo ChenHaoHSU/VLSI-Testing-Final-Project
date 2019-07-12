@@ -1,2 +1,4 @@
 # Testing_Final
-2018 VLSI Testing Final Project
+VLSI Testing Final Project (Fall, 2018) - Transition Delay Fault Automatic Test Pattern Generation
+
+Instructor: Prof. James Chien-Mo Li, National Taiwan University
